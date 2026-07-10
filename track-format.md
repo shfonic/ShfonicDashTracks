@@ -56,23 +56,40 @@ S/F** when `start_m > end_m` (the main straight), and spans may overlap.
 
 ```jsonc
 {
-  "turn": "1",           // turn number (string; may be "1-2"); optional
-  "name": "Abbey",       // common name; optional
-  "type": "corner",      // corner | straight | chicane | complex | drs | other
+  "turn": "1",           // turn number (string; may be "1-2"); corner only
+  "name": "Abbey",       // common name; optional on a corner, required otherwise
+  "type": "corner",      // corner | straight | chicane | complex | other
   "start_m": 351,
   "end_m": 531,
-  "apex_m": 429,         // optional apex (corner/chicane), within the span
-  "gear": 3,             // optional
-  "severity": "high",    // optional: low | medium | high
-  "overtake": "yes"      // optional: yes | no
+  "apex_m": 429,         // optional apex (corner only), within the span
+  "gear": 3,             // optional (corner only)
+  "severity": "high",    // optional: low | medium | high (corner only)
+  "overtake": "yes"      // optional: yes | no (corner / straight)
 }
 ```
 
-A **`complex`** groups a named corner sequence (e.g. *Maggots / Becketts / Chapel*). Its
-span covers the whole group and it lists the corners it groups by turn number; the member
-corners still exist as their own sections — the complex overlays them.
+Fields are type-specific (this is what the editor shows and validates):
+
+| Field | corner | chicane | complex | straight | other |
+|---|:--:|:--:|:--:|:--:|:--:|
+| `turn` | ✓ | – | – | – | – |
+| `name` | optional | required | required | required | required |
+| `apex_m` · `gear` · `severity` | ✓ | – | – | – | – |
+| `overtake` | ✓ | – | – | ✓ | – |
+| `members` | – | optional | required | – | – |
+
+**`chicane`** and **`complex`** are *grouping* types: they name a corner sequence and list
+its corners by turn number in `members`; per-corner gear/apex live on those member corner
+sections (which exist in their own right — the group overlays them). A `complex` must list
+its members; a `chicane` may (e.g. to carry the two corners' gears) or may be a bare named
+span like "Bus Stop".
 
 ```jsonc
 { "name": "Maggots and Becketts and Chapel", "type": "complex",
   "start_m": 3528, "end_m": 4296, "members": ["10", "11", "12", "13", "14"] }
 ```
+
+> **DRS / override zones are not a section type.** DRS is regulation-specific (F1 25 / F2;
+> the 2026 cars replace it with active aero + a manual override), whereas `sections` is
+> shared, car-agnostic geometry. DRS/override zones therefore belong in a (planned) per-car-class
+> profile layer, not here — see the SimRacingTelemetry roadmap's "Track profiles".

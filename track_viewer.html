@@ -108,6 +108,9 @@
     border-radius: 6px; padding: 7px 9px; width: 100%; }
   textarea { resize: vertical; line-height: 1.4; }
   input[type=text]:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+  /* A field that failed validation on Add — cleared as soon as it's edited. */
+  .invalid, input.invalid, select.invalid { border-color: #ff6b6b !important;
+    box-shadow: 0 0 0 2px rgba(255,107,107,.25); }
   .marks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column;
     gap: 6px; }
   .mk { display: flex; flex-direction: column; align-items: stretch; gap: 5px;
@@ -295,9 +298,8 @@
         <select id="type" disabled>
           <option value="corner">corner</option>
           <option value="straight">straight</option>
-          <option value="chicane">chicane</option>
+          <option value="chicane">chicane (group)</option>
           <option value="complex">complex (group)</option>
-          <option value="drs">DRS zone</option>
           <option value="other">other</option>
         </select>
       </div>
@@ -305,7 +307,7 @@
         <input type="text" id="members" placeholder="Grouped turns, e.g. 10, 11, 13"
                title="Turn numbers this complex groups (comma-separated)" disabled />
       </div>
-      <div class="row" style="margin-top:8px">
+      <div class="row" id="metaRow" style="margin-top:8px">
         <select id="gear" title="Recommended gear" disabled>
           <option value="">Gear —</option>
           <option>1</option><option>2</option><option>3</option><option>4</option>
@@ -642,23 +644,43 @@ function nudge(d) {
 }
 function clearSelection() { pending = { start:null, end:null, apex:null }; refreshPending(); render(); }
 
-function updateApexBtn() {
+// Show only the fields that make sense for the chosen type:
+//   corner    — Turn #, Apex, Gear, Severity, Overtake
+//   straight  — Overtake (+ Name)
+//   chicane / complex — Members (they group other corners; gear/apex live on
+//                       those member corner sections, not here)
+//   other     — Name only
+function updateFormFields() {
   const type = $("type").value;
-  $("setApex").hidden = !["corner","chicane"].includes(type);
-  $("membersRow").hidden = type !== "complex";   // a complex groups other turns
+  const isCorner  = type === "corner";
+  const grouping  = type === "chicane" || type === "complex";
+  $("turn").hidden       = !isCorner;
+  $("setApex").hidden    = !isCorner;
+  $("gear").hidden       = !isCorner;
+  $("severity").hidden   = !isCorner;
+  $("overtake").hidden   = !(isCorner || type === "straight");
+  // Hide the whole gear/severity/overtake row when none of them apply.
+  $("metaRow").hidden    = !(isCorner || type === "straight");
+  $("membersRow").hidden = !grouping;
 }
 function readForm() {
+  // Only read fields that apply to the type, so a value left over from another
+  // type (e.g. a gear set while it was a corner, then switched to straight)
+  // never leaks into the saved section.
+  const type = $("type").value;
+  const isCorner = type === "corner";
+  const grouping = type === "chicane" || type === "complex";
   return {
-    turn: $("turn").value.trim(),
+    turn: isCorner ? $("turn").value.trim() : "",
     name: $("name").value.trim(),
-    type: $("type").value,
+    type,
     start_m: pending.start != null ? Math.round(pending.start) : null,
     end_m:   pending.end   != null ? Math.round(pending.end)   : null,
-    apex_m:  pending.apex  != null ? Math.round(pending.apex)  : null,
-    gear: $("gear").value ? +$("gear").value : null,
-    severity: $("severity").value,
-    overtake: $("overtake").value,
-    members: $("type").value === "complex"
+    apex_m:  isCorner && pending.apex != null ? Math.round(pending.apex) : null,
+    gear: isCorner && $("gear").value ? +$("gear").value : null,
+    severity: isCorner ? $("severity").value : "",
+    overtake: (isCorner || type === "straight") ? $("overtake").value : "",
+    members: grouping
       ? $("members").value.split(",").map(s => s.trim()).filter(Boolean)
       : [],
   };
@@ -671,7 +693,7 @@ function resetForm() {
   $("formTitle").textContent = "Add a section";
   $("add").textContent = "Add section";
   $("cancelEdit").hidden = true;
-  updateApexBtn(); refreshPending(); renderMarks(); render();
+  updateFormFields(); refreshPending(); renderMarks(); render();
 }
 function editSection(k) {
   const m = sections[k];
@@ -687,16 +709,47 @@ function editSection(k) {
   $("formTitle").textContent = "Edit section";
   $("add").textContent = "Update section";
   $("cancelEdit").hidden = false;
-  updateApexBtn(); refreshPending(); renderMarks(); render();
+  updateFormFields(); refreshPending(); renderMarks(); render();
   $("formTitle").scrollIntoView({ block: "nearest" });
 }
+const _VALIDATED_IDS = ["turn", "name", "members", "pending"];
+function clearInvalid() {
+  _VALIDATED_IDS.forEach(id => { const el = $(id); if (el) el.classList.remove("invalid"); });
+}
+function invalid(id, msg) {
+  flash(msg);
+  const el = $(id);
+  if (el) {
+    el.classList.add("invalid");
+    if (el.focus) try { el.focus(); } catch (_) {}
+    el.scrollIntoView && el.scrollIntoView({ block: "nearest" });
+  }
+  return false;   // so callers can `return invalid(...)`
+}
+// Clear a field's red flag the moment it's edited.
+["turn", "name", "members"].forEach(id =>
+  $(id).addEventListener("input", () => $(id).classList.remove("invalid")));
+
 function submitSection() {
+  clearInvalid();
   const m = readForm();
-  if (m.start_m == null || m.end_m == null) return flash("Set a start and an end first");
-  if (m.start_m === m.end_m) return flash("Start and end are the same point");
-  if (!m.turn && !m.name) return flash("Give it a turn number or a name");
+  // Span first — every type needs a start and an end (the #pending chip shows it).
+  if (m.start_m == null || m.end_m == null) return invalid("pending", "Set a start and an end first");
+  if (m.start_m === m.end_m) return invalid("pending", "Start and end are the same point");
   if (m.apex_m != null && !inSpan(m.apex_m, m.start_m, m.end_m, total()))
-    return flash("Apex must sit within the section");
+    return invalid("pending", "Apex must sit within the section");
+  // Type-specific required fields.
+  if (m.type === "corner") {
+    if (!m.turn && !m.name) return invalid("turn", "Give the corner a turn number or a name");
+  } else if (m.type === "chicane" || m.type === "complex") {
+    if (!m.name) return invalid("name", "Name this " + m.type);
+    // A complex is defined by the corners it groups; a chicane may list them
+    // (to carry per-corner gear) but a bare named chicane is fine.
+    if (m.type === "complex" && !m.members.length)
+      return invalid("members", "List the turns this complex groups");
+  } else {   // straight, other
+    if (!m.name) return invalid("name", "Name this " + m.type);
+  }
   if (editIndex == null) sections.push(m); else sections[editIndex] = m;
   sections.sort((x, y) => x.start_m - y.start_m);
   markDirty();
@@ -803,12 +856,21 @@ $("setEnd").addEventListener("click", () => {
 $("setApex").addEventListener("click", () => {
   pending.apex = cursor; refreshPending(); render(); flash("Apex set · " + fmt(cursor) + " m"); });
 $("clearSel").addEventListener("click", clearSelection);
-$("type").addEventListener("change", updateApexBtn);
+$("type").addEventListener("change", updateFormFields);
 // Fine adjust: click nudges 1 m; press-and-hold repeats.
 function holdRepeat(btn, d) {
-  let delay, timer;
-  const stop = () => { clearTimeout(delay); clearInterval(timer); };
+  let delay, timer, active = false;
+  const touchDev = window.matchMedia("(pointer: coarse)").matches;
+  const stop = () => { active = false; clearTimeout(delay); clearInterval(timer); };
   btn.addEventListener("pointerdown", e => {
+    // One physical tap must nudge exactly once. iOS WKWebView can deliver a
+    // duplicate pointerdown for the same tap — a compat-mouse ghost, or a
+    // second touch pointerdown before the finger lifts — which would nudge
+    // twice (the "moves 2 m" bug). Ignore the mouse ghost on a touch device,
+    // and any pointerdown while a press is already active.
+    if (active) return;
+    if (touchDev && e.pointerType === "mouse") return;
+    active = true;
     e.preventDefault(); nudge(d);
     delay = setTimeout(() => { timer = setInterval(() => nudge(d), 80); }, 350);
   });
@@ -1016,7 +1078,13 @@ function purgeStale() {
 svg.addEventListener("pointerdown", e => {
   if (!TRACK) return;
   purgeStale();
-  svg.setPointerCapture(e.pointerId);
+  // NB: deliberately no setPointerCapture. `svg { touch-action: none }` already
+  // stops the browser scrolling/zooming during a gesture, so capture only buys
+  // events when the finger leaves the SVG mid-drag — not worth it, because on
+  // iOS WKWebView a leaked capture (missed pointerup after a re-render, reused
+  // pointer id) redirects every later tap into the SVG, so Add/Clear and the
+  // other buttons go dead. Without capture, a tap on a button always reaches
+  // the button.
   pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, t: Date.now() });
   if (pointers.size === 2) {                    // second finger down → pinch
     drag = null; dragMarker = null; downClient = null;
@@ -1088,6 +1156,19 @@ svg.addEventListener("pointercancel", e => dropPointer(e.pointerId));
 // lingers. dropPointer is idempotent, so a double call is harmless.
 window.addEventListener("pointerup", e => dropPointer(e.pointerId));
 window.addEventListener("pointercancel", e => dropPointer(e.pointerId));
+// Stronger safety net for iOS WKWebView, where a pointerup/cancel can be
+// dropped entirely (a native gesture, the app's JS bridge, or a re-render
+// mid-gesture after adding a section) — leaving a phantom entry in `pointers`
+// so the next single tap looks like a two-finger pinch and tap-to-place / Set
+// start/end silently stop working. touchend/touchcancel with no touches left is
+// the reliable "every finger is off the glass" signal, so wipe all pointer
+// state then. Only fires on touch devices; harmless when no gesture is active.
+function clearAllPointers(e) {
+  if (e.touches && e.touches.length) return;   // fingers still down
+  pointers.clear(); pinchPrev = null; endDrag();
+}
+window.addEventListener("touchend", clearAllPointers);
+window.addEventListener("touchcancel", clearAllPointers);
 function stageCentre() {
   const r = svg.getBoundingClientRect();
   return clientToScene(r.left + r.width/2, r.top + r.height/2);

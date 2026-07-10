@@ -16,7 +16,13 @@ import re
 import sys
 
 _FILENAME_RE = re.compile(r"^[a-z0-9][a-z0-9_-]*\.json$")
-_SECTION_TYPES = {"corner", "straight", "chicane", "complex", "drs", "other"}
+# DRS/override zones are regulation-specific (F1 25/F2 have DRS; 2026 uses
+# active-aero + override), so they belong in a future per-class profile, not the
+# shared, car-agnostic sections list.
+_SECTION_TYPES = {"corner", "straight", "chicane", "complex", "other"}
+# Grouping types describe a sequence of corners via a `members` turn list rather
+# than carrying their own turn/gear/apex.
+_GROUPING_TYPES = {"chicane", "complex"}
 
 
 def _is_xy(p):
@@ -53,11 +59,14 @@ def _check_sections(errs, sections):
                 errs.append(f"{at}: {k} must be a number")
         if s.get("apex_m") is not None and not isinstance(s["apex_m"], (int, float)):
             errs.append(f"{at}: apex_m must be a number or absent")
-        if typ == "complex":
+        if typ in _GROUPING_TYPES:
             members = s.get("members")
-            if not isinstance(members, list) or not members:
+            # A complex is defined by the corners it groups, so it must list
+            # them. A chicane may list its member corners (to carry their gear)
+            # but a bare named chicane (e.g. "Bus Stop") is fine too.
+            if typ == "complex" and (not isinstance(members, list) or not members):
                 errs.append(f"{at}: a complex needs a non-empty members list")
-            else:
+            if isinstance(members, list):
                 for m in members:
                     if str(m) not in turns:
                         errs.append(f"{at}: member {m!r} has no matching corner turn")
