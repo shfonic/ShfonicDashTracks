@@ -20,6 +20,9 @@ it lives in a `lines` map keyed by car class.
 | `track` | str | track name, e.g. `Silverstone` |
 | `game_track_length_m` | float | lap length reported by the game (sanity check) |
 | `notes` | str | free-text notes for the whole track (e.g. "missing F2 line") |
+| `created` | str | ISO-8601 UTC, stamped once at first save; kept across edits *(optional)* |
+| `updated` | str | ISO-8601 UTC, refreshed on every save *(optional)* |
+| `author` | str | who recorded it; carried through the editor unchanged (not editable there) *(optional)* |
 | `left_edge` / `right_edge` | list | track edges, `[[x, z], …]` on a common distance grid *(shared)* |
 | `pit_lane` | list | open polyline, pit entry → exit; empty if not recorded *(shared)* |
 | `sf_line` | dict | `{"pos": [x, z], "heading": <radians>}` — the start/finish line *(shared)* |

@@ -19,7 +19,13 @@
   * { box-sizing: border-box; }
   html, body { height: 100%; }
   body { margin: 0; background: var(--bg); color: var(--text);
-    font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+    font-family: var(--sans); -webkit-font-smoothing: antialiased;
+    /* App-like: no text selection or long-press "Copy / Look Up" callout on the
+       controls (it fired when tapping the ± buttons repeatedly). Re-enabled on
+       the text fields below so you can still edit what you type. */
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  input, textarea { -webkit-user-select: text; user-select: text;
+    -webkit-touch-callout: default; }
   .wrap { display: grid; grid-template-columns: 1fr 360px; grid-template-rows: auto 1fr;
     height: 100vh; gap: 1px; background: var(--line); }
   header { grid-column: 1 / -1; background: var(--panel); padding: 12px 20px;
@@ -54,10 +60,11 @@
     background: rgba(16,21,29,.88); border: 1px solid var(--line2); color: var(--text);
     border-radius: 7px; cursor: pointer; }
   .mapctl button:hover { border-color: var(--accent); color: var(--accent); }
-  .hud { position: absolute; left: 14px; bottom: 12px; font-family: var(--mono);
-    font-size: 11px; color: var(--muted); background: rgba(10,13,18,.7);
-    border: 1px solid var(--line); border-radius: 5px; padding: 6px 9px;
-    font-variant-numeric: tabular-nums; pointer-events: none; }
+  .hud { position: absolute; left: 14px; bottom: 12px; max-width: calc(100% - 28px);
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+    background: rgba(10,13,18,.7); border: 1px solid var(--line);
+    border-radius: 5px; padding: 6px 9px; font-variant-numeric: tabular-nums;
+    pointer-events: none; }
   .empty { position: absolute; inset: 0; display: flex; align-items: center;
     justify-content: center; }
   .empty[hidden] { display: none; }   /* beat the flex display when a track loads */
@@ -129,6 +136,61 @@
   .hint { font-size: 11.5px; color: var(--muted); line-height: 1.5; }
   .divider { height: 1px; background: var(--line); }
   .file-lbl { display: inline-flex; }
+
+  /* Collapsible group (Layers) — a disclosure caret on the group title. */
+  details > summary.grp-title { cursor: pointer; list-style: none;
+    display: flex; align-items: center; }
+  summary.grp-title::-webkit-details-marker { display: none; }
+  summary.grp-title::after { content: "▾"; margin-left: auto; color: var(--dim);
+    font-size: 11px; transition: transform .15s; }
+  details:not([open]) > summary.grp-title::after { transform: rotate(-90deg); }
+  details[open] > summary.grp-title { margin-bottom: 10px; }
+
+  /* Embedded in the companion app: the native host owns open/save, so the
+     file-open, download and copy controls are redundant — hide them. */
+  body.embedded #exportsec, body.embedded #exportdiv,
+  body.embedded #openBig { display: none; }
+
+  /* Narrow screens (phones, small tablets in portrait): the 360px control
+     column would crush the map to a sliver, so stack instead — map on top, the
+     controls scrolling in their own row below. The page itself is LOCKED to the
+     viewport (no page scroll) so dragging the map pans the map rather than
+     scrolling the page. Tablets/desktop (≥ 760px) keep the side-by-side view. */
+  @media (max-width: 760px) {
+    html, body { overflow: hidden; overscroll-behavior: none; }
+    .wrap { grid-template-columns: 1fr; grid-template-rows: auto 42vh 1fr;
+      height: 100vh; }
+    .stage { min-height: 0; touch-action: none; }
+    /* Zoom buttons are redundant on touch — pinch to zoom, double-tap to fit. */
+    .mapctl { display: none; }
+    /* aside keeps its base overflow-y:auto → scrolls within its own row */
+
+    /* Compact header: the native app bar already shows the track, so drop the
+       logo/wordmark and pack the info chips into one scrolling row. Reclaims a
+       lot of vertical space for the map + controls. */
+    header { padding: 8px 12px; gap: 8px; }
+    .brand { display: none; }
+    .track-id { padding-left: 0; }
+    .chips { flex-wrap: wrap; margin-left: 0; }   /* wrap, never run off-screen */
+
+    /* Finger-friendly targets, and let control rows wrap instead of running
+       off the right edge (the ± nudge and the gear/severity/overtake selects). */
+    .mapctl button { width: 42px; height: 42px; font-size: 22px; }
+    .dist-row .nudge button { width: 46px; height: 40px; font-size: 20px; }
+    aside button, aside select, aside input[type=text] { min-height: 42px; }
+    input[type=range] { height: 28px; }
+    .row, .dist-row { flex-wrap: wrap; }
+    .row > select { flex: 1 1 45%; }
+    /* Put the ±1 m nudge on its own full-width line so it can't be pushed off
+       the right edge, with bigger tap targets. */
+    .dist-row .nudge { margin-left: 0; margin-top: 8px; flex-basis: 100%; }
+    .dist-row .nudge button { width: 68px; height: 42px; font-size: 22px; }
+
+    /* Text fields: on focus, shift the whole editor UP so the field clears the
+       on-screen keyboard — the map stays visible, it just slides up. The shift
+       amount is computed from visualViewport and applied via --kbshift. */
+    body.kbd .wrap { transform: translateY(var(--kbshift, 0px)); }
+  }
 </style>
 </head>
 <body>
@@ -181,8 +243,10 @@
     </section>
 
     <section>
-      <p class="grp-title">Layers</p>
-      <div class="layers" id="layers"></div>
+      <details id="layersDet">
+        <summary class="grp-title">Layers</summary>
+        <div class="layers" id="layers"></div>
+      </details>
     </section>
 
     <div class="divider"></div>
@@ -268,9 +332,9 @@
       <ul class="marks" id="marks"><li class="none">No track loaded.</li></ul>
     </section>
 
-    <div class="divider"></div>
+    <div class="divider" id="exportdiv"></div>
 
-    <section>
+    <section id="exportsec">
       <div class="btns">
         <button id="download" disabled>Download track</button>
         <button id="copy" disabled>Copy JSON</button>
@@ -291,6 +355,8 @@
 <script>
 "use strict";
 let TRACK = null;
+let _dirty = false;                    // any unsaved change since the last load?
+function markDirty() { _dirty = true; }
 let activeClass = null;                // which car class's racing line is shown
 let sections = [];
 let pending = { start: null, end: null, apex: null };
@@ -469,13 +535,15 @@ function render() {
   if (pending.end != null)   marker(pending.end, cssv("--right"), s);
   if (pending.apex != null) {
     const ap = posAtDistance(t.racing_line, pending.apex, tot);
-    if (ap) diamond(ap, 5*s, cssv("--accent"), cssv("--bg"), 1.5*s);
+    if (ap) diamond(ap, 9*s, "none", cssv("--accent"), 2.5*s);
   }
   applyTransform();
 }
 function marker(d, col, s) {
   const p = posAtDistance(TRACK.racing_line, d, total()); if (!p) return;
-  dot(p, 4*s, col, cssv("--bg"), 1*s);
+  // A hollow ring, drawn larger than the cursor dot so it stays visible even
+  // when start/end sit exactly on the cursor position.
+  dot(p, 9*s, "none", col, 2.5*s);
 }
 function diamond(p, r, fill, stroke, sw) {
   const x = sx(p[0]), y = sy(p[1]);
@@ -542,6 +610,7 @@ function renderMarks() {
     li.querySelector(".del").addEventListener("click", e => {
       e.stopPropagation();
       sections.splice(k, 1);
+      markDirty();
       if (editIndex === k) resetForm(); else if (editIndex > k) editIndex--;
       renderMarks(); render();
     });
@@ -630,11 +699,14 @@ function submitSection() {
     return flash("Apex must sit within the section");
   if (editIndex == null) sections.push(m); else sections[editIndex] = m;
   sections.sort((x, y) => x.start_m - y.start_m);
+  markDirty();
   resetForm();
 }
 function hudBase() {
   const t = TRACK;
-  return `${t.left_edge.length} pts/line · ~${estWidth()} m wide · scroll zoom · drag pan · click track to place cursor · drag a dot to move it`;
+  const touch = window.matchMedia("(pointer: coarse)").matches;
+  const zoom = touch ? "pinch to zoom · double-tap to fit" : "scroll to zoom";
+  return `${t.left_edge.length} pts/line · ~${estWidth()} m wide · ${zoom} · drag to pan · tap the track to place the cursor · drag a dot to move it`;
 }
 function estWidth() {
   const l = TRACK.left_edge, r = TRACK.right_edge;
@@ -705,6 +777,7 @@ function loadTrack(t) {
   computeVB(t); chips(); buildLayers(); setEnabled(true);
   resetForm();                 // clears the form + selection and renders
   updateDist(); $("hud").textContent = hudBase();
+  _dirty = false;              // a freshly loaded track has no unsaved edits
 }
 
 $("classSel").addEventListener("change", e => {
@@ -714,16 +787,21 @@ $("classSel").addEventListener("change", e => {
   $("scrub").max = Math.round(total()); if (cursor > total()) cursor = 0;
   chips(); buildLayers(); render(); updateDist();
 });
-$("notes").addEventListener("input", e => { if (TRACK) TRACK.notes = e.target.value; });
+$("notes").addEventListener("input", e => { if (TRACK) { TRACK.notes = e.target.value; markDirty(); } });
 $("clsNotes").addEventListener("input", e => {
-  if (TRACK && activeClass && TRACK.lines[activeClass]) TRACK.lines[activeClass].notes = e.target.value;
+  if (TRACK && activeClass && TRACK.lines[activeClass]) {
+    TRACK.lines[activeClass].notes = e.target.value; markDirty();
+  }
 });
 
 // events
 $("scrub").addEventListener("input", e => { cursor = +e.target.value; updateDist(); });
-$("setStart").addEventListener("click", () => { pending.start = cursor; refreshPending(); render(); });
-$("setEnd").addEventListener("click", () => { pending.end = cursor; refreshPending(); render(); });
-$("setApex").addEventListener("click", () => { pending.apex = cursor; refreshPending(); render(); });
+$("setStart").addEventListener("click", () => {
+  pending.start = cursor; refreshPending(); render(); flash("Start set · " + fmt(cursor) + " m"); });
+$("setEnd").addEventListener("click", () => {
+  pending.end = cursor; refreshPending(); render(); flash("End set · " + fmt(cursor) + " m"); });
+$("setApex").addEventListener("click", () => {
+  pending.apex = cursor; refreshPending(); render(); flash("Apex set · " + fmt(cursor) + " m"); });
 $("clearSel").addEventListener("click", clearSelection);
 $("type").addEventListener("change", updateApexBtn);
 // Fine adjust: click nudges 1 m; press-and-hold repeats.
@@ -757,12 +835,19 @@ function exportObj() {
   // Write the whole track back out (shared geometry + per-class lines + notes +
   // sections), so it round-trips and can be PUT to /tracks.
   const t = TRACK;
+  // Provenance is carried through untouched — created + author are not
+  // editable here (though the raw JSON always is); updated is bumped because
+  // exporting is a save. Absent stamps stay absent.
+  const nowIso = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
   return {
     format_version: 1,
     game: t.game || "",
     track: t.track || "",
     game_track_length_m: t.game_track_length_m || 0,
     notes: t.notes || "",
+    created: t.created || "",
+    updated: nowIso,
+    author: t.author || "",
     left_edge: t.left_edge || [],
     right_edge: t.right_edge || [],
     pit_lane: t.pit_lane || [],
@@ -777,6 +862,18 @@ function exportName() {
   const track = slug(TRACK.track || "track");
   return (TRACK.game ? `${slug(TRACK.game)}_${track}` : track) + ".json";
 }
+
+// Host bridge — lets a native WebView (the companion app) drive load/save
+// without the file-input/download plumbing. Harmless in a plain browser:
+// nothing calls it there, and the file still opens/downloads normally.
+window.SHFONIC = {
+  load:      txt => { loadTrack(JSON.parse(txt)); flash("Loaded " + (TRACK.track || "track")); },
+  export:    ()  => JSON.stringify(exportObj(), null, 2),
+  filename:  ()  => exportName(),
+  isDirty:   ()  => _dirty,
+  markSaved: ()  => { _dirty = false; },   // host wrote the file — no longer dirty
+  embed:     ()  => document.body.classList.add("embedded"),  // hide open/save controls
+};
 $("copy").addEventListener("click", async () => {
   const json = JSON.stringify(exportObj(), null, 2);
   try { await navigator.clipboard.writeText(json); flash("Sections JSON copied"); }
@@ -801,6 +898,43 @@ $("file").addEventListener("change", e => {
 $("openBig").addEventListener("click", () => $("file").click());
 $("openSmall").addEventListener("click", () => $("file").click());
 
+// Layers group is collapsed by default on phones (little room); open on desktop.
+if (!window.matchMedia("(max-width: 760px)").matches) {
+  const d = $("layersDet"); if (d) d.open = true;
+}
+
+// Keyboard-aware focus (phones): the on-screen keyboard covers the lower part of
+// the screen, so when a text field is focused shift the whole editor up just far
+// enough that the field clears the keyboard (the map stays visible). visualViewport
+// reports the area still visible above the keyboard.
+function isTextField(el) {
+  if (!el) return false;
+  if (el.tagName === "TEXTAREA") return true;
+  return el.tagName === "INPUT" && (el.type || "text") === "text";
+}
+let kbField = null;
+function applyKbShift() {
+  if (!kbField) return;
+  document.body.style.setProperty("--kbshift", "0px");    // measure un-shifted
+  const vv = window.visualViewport;
+  const visH = vv ? vv.height : window.innerHeight;        // visible above keyboard
+  const overlap = kbField.getBoundingClientRect().bottom - (visH - 14);
+  document.body.style.setProperty("--kbshift", (overlap > 0 ? -overlap : 0) + "px");
+}
+document.addEventListener("focusin", e => {
+  if (!isTextField(e.target)) return;
+  kbField = e.target;
+  document.body.classList.add("kbd");
+  setTimeout(applyKbShift, 250);   // wait for the keyboard to animate in
+});
+document.addEventListener("focusout", e => {
+  if (!isTextField(e.target)) return;
+  kbField = null;
+  document.body.classList.remove("kbd");
+  document.body.style.setProperty("--kbshift", "0px");
+});
+if (window.visualViewport) window.visualViewport.addEventListener("resize", applyKbShift);
+
 // pan + zoom
 svg.addEventListener("wheel", e => {
   if (!TRACK) return;
@@ -817,7 +951,7 @@ function sceneLocal(cx, cy) {
 function hitMarker(cx, cy) {
   if (!sceneG || !TRACK) return null;
   const ctm = sceneG.getScreenCTM(); if (!ctm) return null;
-  let found = null, fd = 16;   // px grab radius
+  let found = null, fd = 24;   // px grab radius (finger-friendly)
   for (const m of ["start", "end", "apex"]) {
     if (pending[m] == null) continue;
     const wp = posAtDistance(TRACK.racing_line, pending[m], total()); if (!wp) continue;
@@ -832,7 +966,7 @@ function hitMarker(cx, cy) {
   if (cp) {
     const pt = svg.createSVGPoint(); pt.x = sx(cp[0]); pt.y = sy(cp[1]);
     const sp = pt.matrixTransform(ctm);
-    if (Math.hypot(sp.x - cx, sp.y - cy) < 16) return "cursor";
+    if (Math.hypot(sp.x - cx, sp.y - cy) < 24) return "cursor";
   }
   return null;
 }
@@ -856,19 +990,57 @@ function handleTap(cx, cy) {
   }
   const wp = line[best], pt = svg.createSVGPoint(); pt.x = sx(wp[0]); pt.y = sy(wp[1]);
   const sp = pt.matrixTransform(sceneG.getScreenCTM());
-  if (Math.hypot(sp.x - cx, sp.y - cy) > 40) return;   // tapped away from the track — ignore
+  if (Math.hypot(sp.x - cx, sp.y - cy) > 52) return;   // tapped away from the track — ignore
   cursor = Math.round(best / (n - 1) * total());
   $("scrub").value = cursor; updateDist();
 }
+// Multi-touch: one finger pans / taps the track / drags a dot; two fingers
+// pinch-zoom (and pan together). All input arrives as pointer events because
+// the SVG sets touch-action:none, so the browser never scrolls or zooms itself.
+const pointers = new Map();
+let pinchPrev = null;
+function pinchState() {
+  const p = [...pointers.values()], a = p[0], b = p[1];
+  return { dist: Math.hypot(a.x - b.x, a.y - b.y),
+           mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
+}
+// A missed pointerup (e.g. an interrupted gesture on iOS) can leave a phantom
+// finger in the map, after which every single tap looks like a 2-finger pinch
+// and tap-to-place-cursor silently stops working. Drop anything not touched in
+// the last moment before starting a fresh gesture.
+function purgeStale() {
+  const now = Date.now();
+  for (const [id, p] of pointers) if (now - p.t > 1500) pointers.delete(id);
+  if (pointers.size < 2) pinchPrev = null;
+}
 svg.addEventListener("pointerdown", e => {
   if (!TRACK) return;
-  svg.setPointerCapture(e.pointerId); svg.classList.add("grabbing");
+  purgeStale();
+  svg.setPointerCapture(e.pointerId);
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, t: Date.now() });
+  if (pointers.size === 2) {                    // second finger down → pinch
+    drag = null; dragMarker = null; downClient = null;
+    pinchPrev = pinchState(); svg.classList.add("grabbing");
+    return;
+  }
+  if (pointers.size > 2) return;
+  svg.classList.add("grabbing");
   const m = hitMarker(e.clientX, e.clientY);
-  if (m) { dragMarker = m; return; }          // grab a cursor/start/end/apex dot
-  drag = clientToScene(e.clientX, e.clientY);  // otherwise pan (or, if no move, a tap)
+  if (m) { dragMarker = m; return; }            // grab a cursor/start/end/apex dot
+  drag = clientToScene(e.clientX, e.clientY);    // otherwise pan (or, if no move, a tap)
   downClient = { x: e.clientX, y: e.clientY }; moved = false;
 });
 svg.addEventListener("pointermove", e => {
+  if (pointers.has(e.pointerId)) pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, t: Date.now() });
+  if (pointers.size >= 2) {                      // pinch-zoom about the midpoint
+    const s = pinchState();
+    if (pinchPrev && s.dist > 0 && pinchPrev.dist > 0) {
+      const P = clientToScene(s.mx, s.my), prevP = clientToScene(pinchPrev.mx, pinchPrev.my);
+      pz.tx += P.x - prevP.x; pz.ty += P.y - prevP.y;   // follow the fingers
+      zoomAt(s.dist / pinchPrev.dist, P);               // scale, keeping midpoint fixed
+    }
+    pinchPrev = s; return;
+  }
   if (dragMarker) {
     const d = Math.round(nearestDistance(e.clientX, e.clientY));
     if (dragMarker === "cursor") { cursor = d; $("scrub").value = d; setCursorText(); }
@@ -887,11 +1059,35 @@ function endDrag() {
   drag = null; dragMarker = null; downClient = null; moved = false;
   svg.classList.remove("grabbing");
 }
+function dropPointer(id) {
+  try { svg.releasePointerCapture(id); } catch (_) {}
+  pointers.delete(id);
+  // Dropping below two fingers ends the pinch; a lingering finger must NOT
+  // suddenly start panning (that jumps the map), so clear the drag state and
+  // wait for a fresh touch.
+  if (pointers.size < 2) { pinchPrev = null; drag = null; dragMarker = null; }
+  if (pointers.size === 0) endDrag();
+}
+let lastTap = 0, lastTapXY = null;
 svg.addEventListener("pointerup", e => {
-  if (drag && !moved) handleTap(e.clientX, e.clientY);   // tap (no pan) → move cursor
-  endDrag();
+  if (pointers.size === 1 && drag && !moved) {
+    const now = Date.now();
+    if (now - lastTap < 300 && lastTapXY &&
+        Math.hypot(e.clientX - lastTapXY.x, e.clientY - lastTapXY.y) < 30) {
+      resetView(); flash("Fit to view"); lastTap = 0;   // double-tap → fit
+    } else {
+      handleTap(e.clientX, e.clientY);                    // single tap → cursor
+      lastTap = now; lastTapXY = { x: e.clientX, y: e.clientY };
+    }
+  }
+  dropPointer(e.pointerId);
 });
-svg.addEventListener("pointercancel", endDrag);
+svg.addEventListener("pointercancel", e => dropPointer(e.pointerId));
+// Safety net: if a pointerup/cancel ever bypasses the SVG (capture lost, gesture
+// hijacked by the OS), the window still sees it — clean up so no phantom finger
+// lingers. dropPointer is idempotent, so a double call is harmless.
+window.addEventListener("pointerup", e => dropPointer(e.pointerId));
+window.addEventListener("pointercancel", e => dropPointer(e.pointerId));
 function stageCentre() {
   const r = svg.getBoundingClientRect();
   return clientToScene(r.left + r.width/2, r.top + r.height/2);

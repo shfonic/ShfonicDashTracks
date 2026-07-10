@@ -64,6 +64,11 @@ open it) for viewing a track, switching between each car class's racing line, la
 corners / straights / complexes, and editing notes and gears. Open a track file, edit,
 then **Download** to get a ready-to-commit `<game>_<track>.json`.
 
+The same file doubles as the **embedded editor in the Shfonic Dash companion app**: it
+exposes a small `window.SHFONIC` bridge (`load` / `export` / `filename` / `isDirty`) that a
+native WebView drives instead of the file picker and download button. This has no effect
+when you just open the file in a browser — it still loads and downloads as normal.
+
 ## Contributing
 
 Record a track in Shfonic Dash, then open a PR adding the `.json`. CI runs `validate.py`

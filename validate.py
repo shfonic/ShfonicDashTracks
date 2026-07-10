@@ -118,6 +118,11 @@ def validate_file(path):
 
     if "notes" in obj and not isinstance(obj["notes"], str):
         errs.append("notes: must be a string")
+
+    # Optional provenance metadata (absent on pre-metadata maps).
+    for k in ("created", "updated", "author"):
+        if k in obj and not isinstance(obj[k], str):
+            errs.append(f"{k}: must be a string")
     return errs
 
 
