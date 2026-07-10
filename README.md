@@ -1,0 +1,73 @@
+# Shfonic Dash — Track Maps
+
+Community circuit maps for [Shfonic Dash](https://shfonic.com/dash/index.html), the
+sim-racing telemetry dashboard. Each file describes one track — its edges, racing
+line(s), pit lane, sector boundaries and labelled corners — as plain JSON in world
+metres, recorded by driving the circuit in-game.
+
+They're **free to use in your own projects too** (see [License](#license)). The format is
+documented in **[track-format.md](track-format.md)** so it can stand on its own as a small
+open data set, independent of any one app.
+
+## Coverage
+
+Which tracks exist and what's filled in. `—` = not done yet — **contributions welcome**
+(see [CONTRIBUTING.md](CONTRIBUTING.md)). Regenerate this table with `python3 coverage.py --write`.
+
+<!-- COVERAGE:START -->
+| Game | Track | Class lines | Pit | Sections | Gears | Notes |
+|---|---|---|:--:|:--:|:--:|---|
+| f1_25 | Melbourne | formula1_2026 | ✅ | 17 | — |  |
+| f1_25 | Silverstone | formula1_2026 | ✅ | 23 | — |  |
+<!-- COVERAGE:END -->
+
+Circuit geometry (edges, pit, sectors, corner labels) is **shared across car classes**;
+only the racing line differs, so one file can hold a 2026-car line, a 2025-car line, an
+F2 line, etc. A track just needs *one* class line to be useful — the rest can follow.
+
+> **Position feed:** recording needs world-position telemetry, which today only
+> **F1 25 / F1 26** broadcast, so tracks are F1 for now. Other games slot in as their
+> position support lands.
+
+## Using these in Shfonic Dash
+
+Drop the JSON files into the app's `tracks/` directory (or sync them over the app's LAN
+`/tracks` API). Filenames are `<game>_<track>.json` (slugged), e.g.
+`f1-25_silverstone.json` — the app matches a map to the track you're on by game + name.
+
+## Using these in your own product
+
+Everything you need is in **[track-format.md](track-format.md)**: coordinates are world
+metres (X/Z horizontal, Y up), lines are `[[x, z], …]`, and the file is one self-contained
+JSON object. No app-specific dependencies. Validate any file with:
+
+```bash
+python3 validate.py tracks/f1-25_silverstone.json
+```
+
+## Map utility
+
+**`track_viewer.html`** is a standalone, offline browser tool (no build, no server — just
+open it) for viewing a track, switching between each car class's racing line, labelling
+corners / straights / complexes, and editing notes and gears. Open a track file, edit,
+then **Download** to get a ready-to-commit `<game>_<track>.json`.
+
+## Contributing
+
+Record a track in Shfonic Dash, then open a PR adding the `.json`. CI runs `validate.py`
+on every file, so anything malformed is caught automatically. Full workflow in
+**[CONTRIBUTING.md](CONTRIBUTING.md)**.
+
+## License
+
+Released under **[CC BY 4.0](LICENSE)** — free to use, share and adapt, including in
+commercial products, **as long as you give credit**. These are original coordinate
+recordings, not game assets.
+
+If you use these maps, please attribute them — for example:
+
+> Track maps from **Shfonic Dash Track Maps**
+> (https://github.com/shfonic/ShfonicDashTracks) © Richard Hawes and contributors,
+> licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+
+A link back in your docs, credits screen, or about page is enough.

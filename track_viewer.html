@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Track Map · Shfonic Dash</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect x='3' y='7' width='18' height='11' rx='5.5' fill='none' stroke='%23ffb300' stroke-width='2.6'/><circle cx='12' cy='7' r='2.2' fill='%23ffb300'/></svg>" />
+<style>
+  :root {
+    --bg: #0a0d12; --panel: #10151d; --panel2: #161c26; --line: #232b38;
+    --line2: #313b4b; --text: #e7edf5; --muted: #8b95a6; --dim: #5b6576;
+    --accent: #ffb300;
+    --left: #5a96f5; --right: #f5963f; --race: #58d980;
+    --sf: #ffffff; --sector: #e6cf46; --surface: rgba(120,140,170,0.10);
+    --pit: #c678dd;
+    --mono: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+  .wrap { display: grid; grid-template-columns: 1fr 360px; grid-template-rows: auto 1fr;
+    height: 100vh; gap: 1px; background: var(--line); }
+  header { grid-column: 1 / -1; background: var(--panel); padding: 12px 20px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    border-bottom: 1px solid var(--line); }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand .mark { display: block; }
+  .brand .lock { display: flex; flex-direction: column; line-height: 1.2; }
+  .brand .wm { font-family: var(--mono); font-size: 13px; letter-spacing: .24em;
+    font-weight: 700; color: var(--text); }
+  .brand .wm b { color: var(--accent); font-weight: 700; }
+  .brand .sub { font-family: var(--mono); font-size: 9px; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--dim); }
+  .track-id { display: flex; align-items: baseline; gap: 9px; padding-left: 16px;
+    border-left: 1px solid var(--line2); }
+  .track-id .tlabel { font-family: var(--mono); font-size: 10px; letter-spacing: .16em;
+    color: var(--dim); }
+  .track-id .t { font-family: var(--mono); font-size: 15px; letter-spacing: .05em;
+    color: var(--accent); font-weight: 600; text-transform: uppercase; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+  .chip { font-family: var(--mono); font-size: 11px; letter-spacing: .06em;
+    color: var(--muted); background: var(--panel2); border: 1px solid var(--line);
+    padding: 4px 9px; border-radius: 5px; font-variant-numeric: tabular-nums; }
+  .chip b { color: var(--text); font-weight: 600; }
+  .stage { background: var(--bg); position: relative; overflow: hidden; }
+  svg { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
+  svg.grabbing { cursor: grabbing; }
+  .mapctl { position: absolute; top: 12px; right: 12px; display: flex;
+    flex-direction: column; gap: 6px; }
+  .mapctl button { width: 34px; height: 34px; padding: 0; font-size: 19px; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(16,21,29,.88); border: 1px solid var(--line2); color: var(--text);
+    border-radius: 7px; cursor: pointer; }
+  .mapctl button:hover { border-color: var(--accent); color: var(--accent); }
+  .hud { position: absolute; left: 14px; bottom: 12px; font-family: var(--mono);
+    font-size: 11px; color: var(--muted); background: rgba(10,13,18,.7);
+    border: 1px solid var(--line); border-radius: 5px; padding: 6px 9px;
+    font-variant-numeric: tabular-nums; pointer-events: none; }
+  .empty { position: absolute; inset: 0; display: flex; align-items: center;
+    justify-content: center; }
+  .empty[hidden] { display: none; }   /* beat the flex display when a track loads */
+  .empty .card { text-align: center; max-width: 340px; }
+  .empty h2 { font-family: var(--mono); font-size: 14px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--text); margin: 0 0 8px; }
+  .empty p { color: var(--muted); font-size: 13px; line-height: 1.6; margin: 0 0 18px; }
+  aside { background: var(--panel); padding: 16px; overflow-y: auto; display: flex;
+    flex-direction: column; gap: 20px; }
+  .grp-title { font-family: var(--mono); font-size: 11px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--dim); margin: 0 0 10px; }
+  .layers { display: flex; flex-direction: column; gap: 7px; }
+  .layer { display: flex; align-items: center; gap: 9px; font-size: 13px;
+    cursor: pointer; user-select: none; }
+  .layer input { accent-color: var(--accent); width: 15px; height: 15px; }
+  .sw { width: 14px; height: 3px; border-radius: 2px; flex: none; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  label.lab { font-family: var(--mono); font-size: 10px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--dim); }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  .dist-row { display: flex; align-items: center; gap: 8px; font-family: var(--mono);
+    font-variant-numeric: tabular-nums; }
+  .dist-row .big { font-size: 22px; color: var(--accent); font-weight: 600; }
+  .dist-row .u { font-size: 12px; color: var(--muted); }
+  .dist-row .nudge { margin-left: auto; display: flex; gap: 5px; }
+  .dist-row .nudge button { width: 32px; height: 28px; padding: 0; font-size: 16px;
+    line-height: 1; display: flex; align-items: center; justify-content: center; }
+  .btns { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  button { font-family: var(--sans); font-size: 12.5px; color: var(--text);
+    background: var(--panel2); border: 1px solid var(--line2); border-radius: 6px;
+    padding: 7px 11px; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: #201700; border-color: var(--accent);
+    font-weight: 600; }
+  button:disabled { opacity: .45; cursor: default; border-color: var(--line2); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .row { display: flex; gap: 8px; }
+  .row > * { min-width: 0; }
+  input[type=text], select, textarea { font-family: var(--sans); font-size: 13px;
+    background: var(--panel2); color: var(--text); border: 1px solid var(--line2);
+    border-radius: 6px; padding: 7px 9px; width: 100%; }
+  textarea { resize: vertical; line-height: 1.4; }
+  input[type=text]:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+  .marks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column;
+    gap: 6px; }
+  .mk { display: flex; flex-direction: column; align-items: stretch; gap: 5px;
+    background: var(--panel2); border: 1px solid var(--line); border-left-width: 3px;
+    border-radius: 5px; padding: 7px 9px; font-size: 13px; cursor: pointer; }
+  .mk:hover { border-color: var(--line2); }
+  .mk.editing { border-color: var(--accent); background: var(--panel); }
+  .mk .top, .mk .bot { display: flex; align-items: center; gap: 7px; }
+  .mk .tn { font-family: var(--mono); font-size: 10px; font-weight: 700; color: #201700;
+    background: var(--accent); border-radius: 4px; padding: 1px 5px; flex: none; }
+  .mk .nm { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mk .rng { font-family: var(--mono); font-size: 10.5px; color: var(--muted);
+    font-variant-numeric: tabular-nums; }
+  .mk .type { font-family: var(--mono); font-size: 9px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--dim); }
+  .mk .del { margin-left: auto; padding: 2px 7px; font-size: 15px; line-height: 1;
+    background: none; border: none; color: var(--dim); flex: none; }
+  .mk .del:hover { color: var(--right); }
+  .mk .meta { font-family: var(--mono); font-size: 9px; letter-spacing: .05em;
+    text-transform: uppercase; color: var(--muted); background: var(--panel);
+    border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; }
+  .mk .meta.ot { color: var(--race); border-color: var(--race); }
+  .mk .meta.sev-high { color: var(--right); border-color: var(--right); }
+  .mk .meta.sev-medium { color: var(--sector); }
+  .none { color: var(--dim); font-size: 12.5px; font-style: italic; }
+  .hint { font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+  .divider { height: 1px; background: var(--line); }
+  .file-lbl { display: inline-flex; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <svg class="mark" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="3" y="7" width="18" height="11" rx="5.5" fill="none"
+              stroke="var(--accent)" stroke-width="2.4" />
+        <circle cx="12" cy="7" r="2.1" fill="var(--accent)" />
+      </svg>
+      <div class="lock">
+        <span class="wm">SHFONIC <b>DASH</b></span>
+        <span class="sub">Track map utility</span>
+      </div>
+    </div>
+    <div class="track-id"><span class="tlabel">TRACK</span>
+      <span class="t" id="tname">no track</span></div>
+    <div class="chips" id="chips"></div>
+  </header>
+
+  <div class="stage">
+    <svg id="map" preserveAspectRatio="xMidYMid meet" aria-label="Track map"></svg>
+    <div class="mapctl" id="mapctl" hidden>
+      <button id="zin" title="Zoom in" aria-label="Zoom in">+</button>
+      <button id="zout" title="Zoom out" aria-label="Zoom out">&minus;</button>
+      <button id="zfit" title="Fit to view" aria-label="Fit to view">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path
+          d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none"
+          stroke="currentColor" stroke-width="2" /></svg>
+      </button>
+    </div>
+    <div class="hud" id="hud" hidden></div>
+    <div class="empty" id="empty">
+      <div class="card">
+        <h2>Open a recorded track</h2>
+        <p>Load a <code>tracks/&lt;game&gt;_&lt;track&gt;.json</code> file recorded by
+           Shfonic Dash to view the circuit and label its corners and straights.</p>
+        <button class="primary" id="openBig">Open track file…</button>
+      </div>
+    </div>
+  </div>
+
+  <aside>
+    <section id="clssec" hidden>
+      <p class="grp-title">Racing line — car class</p>
+      <div class="field">
+        <select id="classSel"></select>
+      </div>
+    </section>
+
+    <section>
+      <p class="grp-title">Layers</p>
+      <div class="layers" id="layers"></div>
+    </section>
+
+    <div class="divider"></div>
+
+    <section id="notessec" hidden>
+      <p class="grp-title">Notes</p>
+      <div class="field">
+        <label class="lab" for="notes">Track notes (all classes)</label>
+        <textarea id="notes" rows="2" placeholder="e.g. unfinished — missing F2 line + gears"></textarea>
+      </div>
+      <div class="field">
+        <label class="lab" for="clsNotes">Notes for this class</label>
+        <textarea id="clsNotes" rows="2" placeholder="e.g. 2026 line still rough in S2"></textarea>
+      </div>
+    </section>
+
+    <div class="divider" id="notesdiv" hidden></div>
+
+    <section>
+      <p class="grp-title" id="formTitle">Add a section</p>
+      <div class="field">
+        <label class="lab" for="scrub">Cursor · distance from start/finish</label>
+        <input type="range" id="scrub" min="0" max="1000" value="0" disabled />
+        <div class="dist-row"><span class="big" id="distv">0</span><span class="u">m</span>
+          <span class="u" id="pctv"></span>
+          <span class="nudge">
+            <button id="nudgeDown" title="Back 1 m" aria-label="Back one metre" disabled>&minus;</button>
+            <button id="nudgeUp" title="Forward 1 m" aria-label="Forward one metre" disabled>+</button>
+          </span></div>
+      </div>
+      <div class="btns" style="margin-top:10px">
+        <button id="setStart" disabled>Set start</button>
+        <button id="setEnd" disabled>Set end</button>
+        <button id="setApex" disabled hidden>Set apex</button>
+        <button id="clearSel" disabled>Clear</button>
+      </div>
+      <div class="btns" style="margin-top:8px">
+        <span class="chip" id="pending">start — · end —</span>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <input type="text" id="turn" placeholder="Turn #" style="max-width:118px"
+               title="Turn number, e.g. 1 or 1-2" disabled />
+        <input type="text" id="name" placeholder="Name (e.g. Jones Chicane)" disabled />
+      </div>
+      <div class="row" style="margin-top:8px">
+        <select id="type" disabled>
+          <option value="corner">corner</option>
+          <option value="straight">straight</option>
+          <option value="chicane">chicane</option>
+          <option value="complex">complex (group)</option>
+          <option value="drs">DRS zone</option>
+          <option value="other">other</option>
+        </select>
+      </div>
+      <div class="row" id="membersRow" style="margin-top:8px" hidden>
+        <input type="text" id="members" placeholder="Grouped turns, e.g. 10, 11, 13"
+               title="Turn numbers this complex groups (comma-separated)" disabled />
+      </div>
+      <div class="row" style="margin-top:8px">
+        <select id="gear" title="Recommended gear" disabled>
+          <option value="">Gear —</option>
+          <option>1</option><option>2</option><option>3</option><option>4</option>
+          <option>5</option><option>6</option><option>7</option><option>8</option>
+        </select>
+        <select id="severity" title="Corner severity" disabled>
+          <option value="">Severity —</option>
+          <option value="low">low</option><option value="medium">medium</option>
+          <option value="high">high</option>
+        </select>
+        <select id="overtake" title="Overtaking opportunity" disabled>
+          <option value="">Overtake —</option>
+          <option value="yes">yes</option><option value="no">no</option>
+        </select>
+      </div>
+      <div class="btns" style="margin-top:10px">
+        <button class="primary" id="add" disabled>Add section</button>
+        <button id="cancelEdit" hidden>Cancel</button>
+      </div>
+    </section>
+
+    <section>
+      <p class="grp-title">Sections <span id="count" style="color:var(--dim)"></span></p>
+      <ul class="marks" id="marks"><li class="none">No track loaded.</li></ul>
+    </section>
+
+    <div class="divider"></div>
+
+    <section>
+      <div class="btns">
+        <button id="download" disabled>Download track</button>
+        <button id="copy" disabled>Copy JSON</button>
+        <button id="openSmall">Open track…</button>
+      </div>
+      <p class="hint" style="margin-top:10px">Click a section to edit its wording, points or
+        metadata. A section runs <b>start → end</b> in driving order and may cross the
+        start/finish line (the main straight); sections can overlap. The turn number and
+        the (unofficial) common name are separate. Gear / severity / overtake are optional.
+        Stored as distance spans (metres from S/F) <b>inside the track file</b>; Download
+        writes the whole <code>&lt;game&gt;_&lt;track&gt;.json</code> back out (ready to sync).</p>
+    </section>
+  </aside>
+</div>
+
+<input type="file" id="file" accept=".json,application/json" hidden />
+
+<script>
+"use strict";
+let TRACK = null;
+let activeClass = null;                // which car class's racing line is shown
+let sections = [];
+let pending = { start: null, end: null, apex: null };
+let editIndex = null;                 // index being edited, or null when adding
+let cursor = 0;                       // distance in metres
+let VB = { w: 1, h: 1 };
+let pz = { k: 1, tx: 0, ty: 0 };      // pan/zoom of the scene group
+let sceneG = null;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const SVGNS = "http://www.w3.org/2000/svg";
+const svg = document.getElementById("map");
+const $ = id => document.getElementById(id);
+
+// World is X/Z metres. Flip X so the lap runs clockwise (real driving
+// direction), and negate Z so north is up in SVG (y grows downward).
+const sx = x => -x;
+const sy = z => -z;
+
+const LAYERS = [
+  { key: "surface", label: "Track surface", css: "--surface" },
+  { key: "left",    label: "Left edge",     css: "--left" },
+  { key: "right",   label: "Right edge",    css: "--right" },
+  { key: "race",    label: "Racing line",   css: "--race" },
+  { key: "sectors", label: "Sectors",       css: "--sector" },
+  { key: "sf",      label: "Start / finish",css: "--sf" },
+  { key: "pit",     label: "Pit lane",      css: "--pit" },
+  { key: "labels",  label: "Section labels",css: "--accent" },
+];
+const vis = Object.fromEntries(LAYERS.map(l => [l.key, true]));
+const LABEL_COLORS = ["#ff5db1","#59d3e6","#f5963f","#a78bfa","#58d980","#ffd24a","#ff8080"];
+
+// ---- geometry ----
+function total() { return (TRACK && TRACK.game_track_length_m) || 1; }
+function allPoints(t) {
+  return [...(t.left_edge||[]), ...(t.right_edge||[]), ...(t.racing_line||[]),
+          ...(t.pit_lane||[])];
+}
+function computeVB(t) {
+  const pts = allPoints(t);
+  const X = pts.map(p => sx(p[0])), Y = pts.map(p => sy(p[1]));
+  const minx = Math.min(...X), maxx = Math.max(...X);
+  const miny = Math.min(...Y), maxy = Math.max(...Y);
+  const pad = 40;
+  VB = { w: maxx - minx, h: maxy - miny };
+  svg.setAttribute("viewBox",
+    `${minx-pad} ${miny-pad} ${VB.w+2*pad} ${VB.h+2*pad}`);
+}
+function posAtDistance(line, d, tot) {
+  if (!line || !line.length) return null;
+  const f = tot > 0 ? Math.min(Math.max(d/tot, 0), 1) : 0;
+  const idx = f * (line.length - 1);
+  const i = Math.floor(idx), t = idx - i;
+  const a = line[i], b = line[Math.min(i+1, line.length-1)];
+  return [a[0] + (b[0]-a[0])*t, a[1] + (b[1]-a[1])*t];
+}
+// A section is a forward arc from d0 to d1 in driving order; if d0 > d1 it wraps
+// across the start/finish line (e.g. the main straight). Returns the point list.
+function spanPoints(line, d0, d1, tot) {
+  const n = line.length;
+  const i0 = Math.max(0, Math.round(d0/tot*(n-1)));
+  const i1 = Math.min(n-1, Math.round(d1/tot*(n-1)));
+  if (d0 <= d1) return line.slice(i0, i1+1);
+  return [...line.slice(i0), ...line.slice(0, i1+1)];   // wrap through S/F
+}
+function spanLength(d0, d1, tot) { return d0 <= d1 ? d1 - d0 : (tot - d0) + d1; }
+function spanMid(d0, d1, tot) {
+  return d0 <= d1 ? (d0 + d1) / 2 : (d0 + spanLength(d0, d1, tot) / 2) % tot;
+}
+function wraps(m) { return m.start_m > m.end_m; }
+function inSpan(d, d0, d1, tot) { return d0 <= d1 ? (d>=d0 && d<=d1) : (d>=d0 || d<=d1); }
+function sectionLabel(m) { return m.name || (m.turn ? "T" + m.turn : (m.type || "?")); }
+function pathFrom(pts) {
+  return pts.map((p,i) => `${i?'L':'M'}${sx(p[0]).toFixed(1)},${sy(p[1]).toFixed(1)}`).join(" ");
+}
+function cssv(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+// Sector boundaries -> [0, b1, b2, ... , total]; regions numbered in driving order.
+function sectorRegions(t) {
+  const bs = (t.sectors||[]).map(s => s.lap_dist_m).filter(v => v>0).sort((a,b)=>a-b);
+  const edges = [0, ...bs, total()];
+  const out = [];
+  for (let i=0; i<edges.length-1; i++)
+    out.push({ n: i+1, start: edges[i], end: edges[i+1],
+               mid: (edges[i]+edges[i+1])/2 });
+  return out;
+}
+
+// ---- render ----
+function strokeScale() { return Math.max(VB.w, VB.h) / 500; }
+function add(tag, attrs) {
+  const el = document.createElementNS(SVGNS, tag);
+  for (const k in attrs) el.setAttribute(k, attrs[k]);
+  (sceneG || svg).appendChild(el); return el;
+}
+function applyTransform() {
+  if (sceneG) sceneG.setAttribute("transform", `translate(${pz.tx} ${pz.ty}) scale(${pz.k})`);
+}
+function clientToScene(cx, cy) {
+  const pt = svg.createSVGPoint(); pt.x = cx; pt.y = cy;
+  return pt.matrixTransform(svg.getScreenCTM().inverse());
+}
+let rafPending = false;
+function scheduleRender() {           // coalesce rapid zoom events to one/frame
+  if (rafPending) return;
+  rafPending = true;
+  requestAnimationFrame(() => { rafPending = false; render(); });
+}
+function zoomAt(factor, P) {
+  const nk = clamp(pz.k * factor, 1, 40), f = nk / pz.k;
+  pz.tx = P.x - f * (P.x - pz.tx);
+  pz.ty = P.y - f * (P.y - pz.ty);
+  pz.k = nk; scheduleRender();   // re-render so marker/label sizes track the zoom
+}
+function resetView() { pz = { k: 1, tx: 0, ty: 0 }; render(); }
+function dot(p, r, fill, stroke, sw) {
+  add("circle", { cx: sx(p[0]), cy: sy(p[1]), r, fill, stroke, "stroke-width": sw }); }
+function label(p, s, col, size, dx) {
+  const t = add("text", { x: sx(p[0])+dx, y: sy(p[1])-dx*0.4, fill: col,
+    "font-size": size, "font-family": "var(--mono)", "paint-order": "stroke",
+    stroke: "var(--bg)", "stroke-width": size*0.18 }); t.textContent = s; }
+
+function render() {
+  if (!TRACK) return;
+  // Divide by the zoom so dots, labels and line widths stay a constant *screen*
+  // size as you zoom — the track detail grows, the markers don't (so you can
+  // place an apex precisely).
+  const t = TRACK, tot = total(), s = strokeScale() / pz.k;
+  svg.innerHTML = "";
+  sceneG = document.createElementNS(SVGNS, "g");
+  svg.appendChild(sceneG);
+
+  if (vis.surface && t.left_edge.length && t.right_edge.length) {
+    const ring = [...t.left_edge, ...[...t.right_edge].reverse()];
+    add("path", { d: pathFrom(ring) + " Z", fill: cssv("--surface"), stroke: "none" });
+  }
+  if (vis.left)  add("path", { d: pathFrom(t.left_edge),  fill:"none", stroke: cssv("--left"),  "stroke-width": 2*s });
+  if (vis.right) add("path", { d: pathFrom(t.right_edge), fill:"none", stroke: cssv("--right"), "stroke-width": 2*s });
+  if (vis.race)  add("path", { d: pathFrom(t.racing_line),fill:"none", stroke: cssv("--race"),  "stroke-width": 2.5*s, "stroke-opacity": .95 });
+  if (vis.pit && t.pit_lane.length)
+    add("path", { d: pathFrom(t.pit_lane), fill:"none", stroke: cssv("--pit"), "stroke-width": 3*s, "stroke-dasharray": `${6*s} ${4*s}` });
+
+  if (vis.labels) sections.forEach((m, k) => {
+    const seg = spanPoints(t.racing_line, m.start_m, m.end_m, tot);
+    const col = LABEL_COLORS[k % LABEL_COLORS.length];
+    const editing = (k === editIndex);
+    add("path", { d: pathFrom(seg), fill:"none", stroke: col,
+      "stroke-width": (editing ? 9 : 6)*s,
+      "stroke-opacity": editing ? .7 : .45, "stroke-linecap": "round" });
+    const mid = posAtDistance(t.racing_line, spanMid(m.start_m, m.end_m, tot), tot);
+    if (mid) label(mid, sectionLabel(m), col, 16*s, 0);
+    if (m.apex_m != null) {
+      const ap = posAtDistance(t.racing_line, m.apex_m, tot);
+      if (ap) diamond(ap, 5*s, col, cssv("--bg"), 1.5*s);
+    }
+  });
+
+  if (vis.sectors) {
+    sectorRegions(t).forEach(r => {
+      const mid = posAtDistance(t.racing_line, r.mid, tot);
+      if (mid) label(mid, "S" + r.n, cssv("--sector"), 15*s, 0);
+    });
+    (t.sectors||[]).forEach(sec => {
+      const p = posAtDistance(t.racing_line, sec.lap_dist_m, tot) || sec.pos;
+      dot(p, 4*s, cssv("--sector"), cssv("--bg"), 1.5*s);
+    });
+  }
+
+  if (vis.sf && t.sf_line && t.sf_line.pos) {
+    dot(t.sf_line.pos, 6*s, "none", cssv("--sf"), 2.5*s);
+    label(t.sf_line.pos, "S/F", cssv("--sf"), 14*s, 10*s);
+  }
+
+  const cp = posAtDistance(t.racing_line, cursor, tot);
+  if (cp) dot(cp, 6*s, cssv("--accent"), cssv("--bg"), 1.5*s);
+  if (pending.start != null) marker(pending.start, cssv("--race"), s);
+  if (pending.end != null)   marker(pending.end, cssv("--right"), s);
+  if (pending.apex != null) {
+    const ap = posAtDistance(t.racing_line, pending.apex, tot);
+    if (ap) diamond(ap, 5*s, cssv("--accent"), cssv("--bg"), 1.5*s);
+  }
+  applyTransform();
+}
+function marker(d, col, s) {
+  const p = posAtDistance(TRACK.racing_line, d, total()); if (!p) return;
+  dot(p, 4*s, col, cssv("--bg"), 1*s);
+}
+function diamond(p, r, fill, stroke, sw) {
+  const x = sx(p[0]), y = sy(p[1]);
+  add("path", { d: `M${x},${y-r} L${x+r},${y} L${x},${y+r} L${x-r},${y} Z`,
+    fill, stroke, "stroke-width": sw });
+}
+
+// ---- UI ----
+function fmt(n) { return Math.round(n).toLocaleString(); }
+function chips() {
+  const t = TRACK;
+  const c = [
+    ["Game", (t.game||"").toUpperCase()],
+    ["Class", activeClass || "—"],
+    ["Classes", Object.keys(t.lines || {}).length || "—"],
+    ["Length", fmt(t.game_track_length_m) + " m"],
+    ["Racing-line laps", t.racing_attempts ?? "—"],
+    ["Sectors", (t.sectors||[]).length + 1],
+  ];
+  $("chips").innerHTML = c.map(([k,v]) => `<span class="chip">${k} <b>${v}</b></span>`).join("");
+  $("tname").textContent = t.track || "Untitled";
+}
+function buildLayers() {
+  const host = $("layers"); host.innerHTML = "";
+  LAYERS.forEach(l => {
+    const dis = (l.key === "pit" && !TRACK.pit_lane.length);
+    const row = document.createElement("label"); row.className = "layer";
+    row.innerHTML = `<input type="checkbox" ${vis[l.key]?"checked":""} ${dis?"disabled":""}>
+      <span class="sw" style="background:${cssv(l.css)}"></span>
+      <span style="${dis?'color:var(--dim)':''}">${l.label}${dis?' — none':''}</span>`;
+    row.querySelector("input").addEventListener("change", e => { vis[l.key] = e.target.checked; render(); });
+    host.appendChild(row);
+  });
+}
+function esc(s) { return String(s).replace(/[&<>"]/g, c =>
+  ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c])); }
+function renderMarks() {
+  const host = $("marks");
+  $("count").textContent = sections.length ? `(${sections.length})` : "";
+  if (!sections.length) {
+    host.innerHTML = `<li class="none">No sections yet — scrub, set start &amp; end, then Add.</li>`;
+    return;
+  }
+  host.innerHTML = "";
+  sections.forEach((m, k) => {
+    const li = document.createElement("li");
+    li.className = "mk" + (k === editIndex ? " editing" : "");
+    li.style.borderLeftColor = LABEL_COLORS[k % LABEL_COLORS.length];
+    const rng = wraps(m) ? `${fmt(m.start_m)} → ${fmt(m.end_m)} m ↻`
+                         : `${fmt(m.start_m)}–${fmt(m.end_m)} m`;
+    const tn = m.turn ? `<span class="tn">T${esc(m.turn)}</span>` : "";
+    const nm = m.name ? esc(m.name) : (m.turn ? "" : "(unnamed)");
+    const meta = [];
+    if (m.apex_m != null) meta.push(`<span class="meta">apex ${fmt(m.apex_m)}m</span>`);
+    if (m.gear) meta.push(`<span class="meta">gear ${esc(m.gear)}</span>`);
+    if (m.severity) meta.push(`<span class="meta sev-${esc(m.severity)}">${esc(m.severity)}</span>`);
+    if (m.overtake === "yes") meta.push(`<span class="meta ot">overtake</span>`);
+    else if (m.overtake === "no") meta.push(`<span class="meta">no overtake</span>`);
+    li.innerHTML =
+      `<div class="top">${tn}<span class="nm">${nm}</span>` +
+      `<span class="type">${esc(m.type)}</span>` +
+      `<button class="del" title="Delete section" aria-label="Delete section">×</button></div>` +
+      `<div class="bot"><span class="rng">${rng}</span>${meta.join("")}</div>`;
+    li.querySelector(".del").addEventListener("click", e => {
+      e.stopPropagation();
+      sections.splice(k, 1);
+      if (editIndex === k) resetForm(); else if (editIndex > k) editIndex--;
+      renderMarks(); render();
+    });
+    li.addEventListener("click", () => editSection(k));
+    host.appendChild(li);
+  });
+}
+function setCursorText() {
+  $("distv").textContent = fmt(cursor);
+  $("pctv").textContent = `· ${(cursor/total()*100).toFixed(0)}% of lap`;
+}
+function updateDist() { setCursorText(); render(); }
+function refreshPending() {
+  const f = v => v==null ? "—" : fmt(v)+" m";
+  let s = `start ${f(pending.start)} · end ${f(pending.end)}`;
+  if (pending.apex != null) s += ` · apex ${f(pending.apex)}`;
+  $("pending").textContent = s;
+}
+function setEnabled(on) {
+  ["scrub","nudgeDown","nudgeUp","setStart","setEnd","setApex","clearSel","turn","name",
+   "type","members","gear","severity","overtake","add","download","copy"]
+    .forEach(id => $(id).disabled = !on);
+}
+function nudge(d) {
+  if (!TRACK) return;
+  cursor = clamp(cursor + d, 0, total());
+  $("scrub").value = Math.round(cursor);
+  updateDist();
+}
+function clearSelection() { pending = { start:null, end:null, apex:null }; refreshPending(); render(); }
+
+function updateApexBtn() {
+  const type = $("type").value;
+  $("setApex").hidden = !["corner","chicane"].includes(type);
+  $("membersRow").hidden = type !== "complex";   // a complex groups other turns
+}
+function readForm() {
+  return {
+    turn: $("turn").value.trim(),
+    name: $("name").value.trim(),
+    type: $("type").value,
+    start_m: pending.start != null ? Math.round(pending.start) : null,
+    end_m:   pending.end   != null ? Math.round(pending.end)   : null,
+    apex_m:  pending.apex  != null ? Math.round(pending.apex)  : null,
+    gear: $("gear").value ? +$("gear").value : null,
+    severity: $("severity").value,
+    overtake: $("overtake").value,
+    members: $("type").value === "complex"
+      ? $("members").value.split(",").map(s => s.trim()).filter(Boolean)
+      : [],
+  };
+}
+function resetForm() {
+  editIndex = null;
+  pending = { start:null, end:null, apex:null };
+  ["turn","name","gear","severity","overtake","members"].forEach(id => $(id).value = "");
+  $("type").value = "corner";
+  $("formTitle").textContent = "Add a section";
+  $("add").textContent = "Add section";
+  $("cancelEdit").hidden = true;
+  updateApexBtn(); refreshPending(); renderMarks(); render();
+}
+function editSection(k) {
+  const m = sections[k];
+  editIndex = k;
+  pending = { start: m.start_m, end: m.end_m, apex: (m.apex_m != null ? m.apex_m : null) };
+  $("turn").value = m.turn || "";
+  $("name").value = m.name || "";
+  $("type").value = m.type || "corner";
+  $("gear").value = m.gear || "";
+  $("severity").value = m.severity || "";
+  $("overtake").value = m.overtake || "";
+  $("members").value = (m.members || []).join(", ");
+  $("formTitle").textContent = "Edit section";
+  $("add").textContent = "Update section";
+  $("cancelEdit").hidden = false;
+  updateApexBtn(); refreshPending(); renderMarks(); render();
+  $("formTitle").scrollIntoView({ block: "nearest" });
+}
+function submitSection() {
+  const m = readForm();
+  if (m.start_m == null || m.end_m == null) return flash("Set a start and an end first");
+  if (m.start_m === m.end_m) return flash("Start and end are the same point");
+  if (!m.turn && !m.name) return flash("Give it a turn number or a name");
+  if (m.apex_m != null && !inSpan(m.apex_m, m.start_m, m.end_m, total()))
+    return flash("Apex must sit within the section");
+  if (editIndex == null) sections.push(m); else sections[editIndex] = m;
+  sections.sort((x, y) => x.start_m - y.start_m);
+  resetForm();
+}
+function hudBase() {
+  const t = TRACK;
+  return `${t.left_edge.length} pts/line · ~${estWidth()} m wide · scroll zoom · drag pan · click track to place cursor · drag a dot to move it`;
+}
+function estWidth() {
+  const l = TRACK.left_edge, r = TRACK.right_edge;
+  if (!l.length || l.length !== r.length) return "?";
+  let s=0,n=0; for (let i=0;i<l.length;i+=40){ s+=Math.hypot(l[i][0]-r[i][0], l[i][1]-r[i][1]); n++; }
+  return (s/n).toFixed(1);
+}
+let flashTimer;
+function flash(msg) {
+  const hud = $("hud"); hud.hidden = false; hud.textContent = msg;
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => { if (TRACK) hud.textContent = hudBase(); }, 1900);
+}
+
+// Normalise a raw section from the track file to the internal working shape.
+function normSection(s) {
+  return {
+    turn: s.turn != null ? String(s.turn) : "",
+    name: s.name || "",
+    type: s.type || "other",
+    start_m: Math.round(s.start_m), end_m: Math.round(s.end_m),
+    apex_m: s.apex_m != null ? Math.round(s.apex_m) : null,
+    gear: s.gear || null, severity: s.severity || "", overtake: s.overtake || "",
+    members: Array.isArray(s.members) ? s.members.map(String) : [],
+  };
+}
+
+// Racing lines are per car class under `lines`.
+function ensureLines(t) {
+  if (!t.lines || typeof t.lines !== "object") t.lines = {};
+  return t;
+}
+// Point TRACK.racing_line/racing_attempts at the active class so all the
+// rendering code keeps reading t.racing_line unchanged.
+function applyActiveLine() {
+  const e = (activeClass && TRACK.lines[activeClass]) || {};
+  TRACK.racing_line = e.racing_line || [];
+  TRACK.racing_attempts = e.racing_attempts || 0;
+}
+function fillClassSel() {
+  const cls = Object.keys(TRACK.lines);
+  const sel = $("classSel");
+  sel.innerHTML = cls.length
+    ? cls.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join("")
+    : `<option value="">— no racing line —</option>`;
+  sel.value = activeClass || "";
+  $("clssec").hidden = cls.length < 1;
+  $("classSel").disabled = cls.length < 2;   // nothing to switch if only one
+}
+
+function loadTrack(t) {
+  ensureLines(t);
+  ["left_edge","right_edge","pit_lane","sectors"].forEach(k => t[k] = t[k]||[]);
+  TRACK = t;
+  activeClass = Object.keys(t.lines)[0] || null;
+  applyActiveLine();
+  // Sections now live inside the track JSON. Load any that are already there.
+  sections = (Array.isArray(t.sections) ? t.sections : [])
+    .map(normSection).filter(s => Number.isFinite(s.start_m) && Number.isFinite(s.end_m));
+  sections.sort((a, b) => a.start_m - b.start_m);
+  cursor = 0; pz = { k: 1, tx: 0, ty: 0 };
+  $("empty").hidden = true; $("hud").hidden = false; $("mapctl").hidden = false;
+  $("scrub").max = Math.round(total()); $("scrub").value = 0;
+  fillClassSel();
+  $("notessec").hidden = false; $("notesdiv").hidden = false;
+  $("notes").value = t.notes || "";
+  $("clsNotes").value = (activeClass && t.lines[activeClass] && t.lines[activeClass].notes) || "";
+  computeVB(t); chips(); buildLayers(); setEnabled(true);
+  resetForm();                 // clears the form + selection and renders
+  updateDist(); $("hud").textContent = hudBase();
+}
+
+$("classSel").addEventListener("change", e => {
+  activeClass = e.target.value || null;
+  applyActiveLine();
+  $("clsNotes").value = (activeClass && TRACK.lines[activeClass] && TRACK.lines[activeClass].notes) || "";
+  $("scrub").max = Math.round(total()); if (cursor > total()) cursor = 0;
+  chips(); buildLayers(); render(); updateDist();
+});
+$("notes").addEventListener("input", e => { if (TRACK) TRACK.notes = e.target.value; });
+$("clsNotes").addEventListener("input", e => {
+  if (TRACK && activeClass && TRACK.lines[activeClass]) TRACK.lines[activeClass].notes = e.target.value;
+});
+
+// events
+$("scrub").addEventListener("input", e => { cursor = +e.target.value; updateDist(); });
+$("setStart").addEventListener("click", () => { pending.start = cursor; refreshPending(); render(); });
+$("setEnd").addEventListener("click", () => { pending.end = cursor; refreshPending(); render(); });
+$("setApex").addEventListener("click", () => { pending.apex = cursor; refreshPending(); render(); });
+$("clearSel").addEventListener("click", clearSelection);
+$("type").addEventListener("change", updateApexBtn);
+// Fine adjust: click nudges 1 m; press-and-hold repeats.
+function holdRepeat(btn, d) {
+  let delay, timer;
+  const stop = () => { clearTimeout(delay); clearInterval(timer); };
+  btn.addEventListener("pointerdown", e => {
+    e.preventDefault(); nudge(d);
+    delay = setTimeout(() => { timer = setInterval(() => nudge(d), 80); }, 350);
+  });
+  ["pointerup","pointerleave","pointercancel"].forEach(ev => btn.addEventListener(ev, stop));
+}
+holdRepeat($("nudgeDown"), -1);
+holdRepeat($("nudgeUp"), +1);
+$("add").addEventListener("click", submitSection);
+$("cancelEdit").addEventListener("click", resetForm);
+
+function cleanSection(m) {
+  const o = {};
+  if (m.turn) o.turn = m.turn;
+  if (m.name) o.name = m.name;
+  o.type = m.type; o.start_m = m.start_m; o.end_m = m.end_m;
+  if (m.apex_m != null) o.apex_m = m.apex_m;
+  if (m.gear) o.gear = m.gear;
+  if (m.severity) o.severity = m.severity;
+  if (m.overtake) o.overtake = m.overtake;
+  if (m.type === "complex" && (m.members || []).length) o.members = m.members.slice();
+  return o;
+}
+function exportObj() {
+  // Write the whole track back out (shared geometry + per-class lines + notes +
+  // sections), so it round-trips and can be PUT to /tracks.
+  const t = TRACK;
+  return {
+    format_version: 1,
+    game: t.game || "",
+    track: t.track || "",
+    game_track_length_m: t.game_track_length_m || 0,
+    notes: t.notes || "",
+    left_edge: t.left_edge || [],
+    right_edge: t.right_edge || [],
+    pit_lane: t.pit_lane || [],
+    sf_line: t.sf_line || {},
+    sectors: t.sectors || [],
+    markers: t.markers || [],
+    lines: t.lines || {},
+    sections: sections.map(cleanSection),
+  };
+}
+function exportName() {
+  const slug = s => (s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const track = slug(TRACK.track || "track");
+  return (TRACK.game ? `${slug(TRACK.game)}_${track}` : track) + ".json";
+}
+$("copy").addEventListener("click", async () => {
+  const json = JSON.stringify(exportObj(), null, 2);
+  try { await navigator.clipboard.writeText(json); flash("Sections JSON copied"); }
+  catch { flash("Copy blocked — use Download instead"); }
+});
+$("download").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify(exportObj(), null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = exportName();
+  a.click(); URL.revokeObjectURL(url);
+});
+$("file").addEventListener("change", e => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try { loadTrack(JSON.parse(r.result)); flash("Loaded " + (TRACK.track || f.name)); }
+    catch { flash("That file isn't a valid track JSON"); }
+  };
+  r.readAsText(f); e.target.value = "";
+});
+$("openBig").addEventListener("click", () => $("file").click());
+$("openSmall").addEventListener("click", () => $("file").click());
+
+// pan + zoom
+svg.addEventListener("wheel", e => {
+  if (!TRACK) return;
+  e.preventDefault();
+  zoomAt(e.deltaY < 0 ? 1.15 : 1/1.15, clientToScene(e.clientX, e.clientY));
+}, { passive: false });
+let drag = null, dragMarker = null, downClient = null, moved = false;
+// Screen<->scene helpers (sceneG's CTM includes the pan/zoom transform).
+function sceneLocal(cx, cy) {
+  const pt = svg.createSVGPoint(); pt.x = cx; pt.y = cy;
+  return pt.matrixTransform(sceneG.getScreenCTM().inverse());
+}
+// Which pending marker (if any) is under the pointer — within a grab radius.
+function hitMarker(cx, cy) {
+  if (!sceneG || !TRACK) return null;
+  const ctm = sceneG.getScreenCTM(); if (!ctm) return null;
+  let found = null, fd = 16;   // px grab radius
+  for (const m of ["start", "end", "apex"]) {
+    if (pending[m] == null) continue;
+    const wp = posAtDistance(TRACK.racing_line, pending[m], total()); if (!wp) continue;
+    const pt = svg.createSVGPoint(); pt.x = sx(wp[0]); pt.y = sy(wp[1]);
+    const sp = pt.matrixTransform(ctm);
+    const d = Math.hypot(sp.x - cx, sp.y - cy);
+    if (d < fd) { fd = d; found = m; }
+  }
+  if (found) return found;
+  // The cursor (main marker) — lower priority than pending dots if they overlap.
+  const cp = posAtDistance(TRACK.racing_line, cursor, total());
+  if (cp) {
+    const pt = svg.createSVGPoint(); pt.x = sx(cp[0]); pt.y = sy(cp[1]);
+    const sp = pt.matrixTransform(ctm);
+    if (Math.hypot(sp.x - cx, sp.y - cy) < 16) return "cursor";
+  }
+  return null;
+}
+// Distance of the racing-line point nearest the pointer (markers ride the line).
+function nearestDistance(cx, cy) {
+  const p = sceneLocal(cx, cy), line = TRACK.racing_line, n = line.length;
+  let best = 0, bd = Infinity;
+  for (let i = 0; i < n; i++) {
+    const dx = sx(line[i][0]) - p.x, dy = sy(line[i][1]) - p.y, d = dx*dx + dy*dy;
+    if (d < bd) { bd = d; best = i; }
+  }
+  return best / (n - 1) * total();
+}
+// A tap on (or near) the track jumps the cursor to the closest racing-line point.
+function handleTap(cx, cy) {
+  const p = sceneLocal(cx, cy), line = TRACK.racing_line, n = line.length;
+  let best = 0, bd = Infinity;
+  for (let i = 0; i < n; i++) {
+    const dx = sx(line[i][0]) - p.x, dy = sy(line[i][1]) - p.y, d = dx*dx + dy*dy;
+    if (d < bd) { bd = d; best = i; }
+  }
+  const wp = line[best], pt = svg.createSVGPoint(); pt.x = sx(wp[0]); pt.y = sy(wp[1]);
+  const sp = pt.matrixTransform(sceneG.getScreenCTM());
+  if (Math.hypot(sp.x - cx, sp.y - cy) > 40) return;   // tapped away from the track — ignore
+  cursor = Math.round(best / (n - 1) * total());
+  $("scrub").value = cursor; updateDist();
+}
+svg.addEventListener("pointerdown", e => {
+  if (!TRACK) return;
+  svg.setPointerCapture(e.pointerId); svg.classList.add("grabbing");
+  const m = hitMarker(e.clientX, e.clientY);
+  if (m) { dragMarker = m; return; }          // grab a cursor/start/end/apex dot
+  drag = clientToScene(e.clientX, e.clientY);  // otherwise pan (or, if no move, a tap)
+  downClient = { x: e.clientX, y: e.clientY }; moved = false;
+});
+svg.addEventListener("pointermove", e => {
+  if (dragMarker) {
+    const d = Math.round(nearestDistance(e.clientX, e.clientY));
+    if (dragMarker === "cursor") { cursor = d; $("scrub").value = d; setCursorText(); }
+    else { pending[dragMarker] = d; refreshPending(); }
+    scheduleRender(); return;
+  }
+  if (drag) {
+    if (downClient && Math.hypot(e.clientX - downClient.x, e.clientY - downClient.y) > 4) moved = true;
+    const p = clientToScene(e.clientX, e.clientY);
+    pz.tx += p.x - drag.x; pz.ty += p.y - drag.y;
+    drag = p; applyTransform(); return;
+  }
+  svg.style.cursor = hitMarker(e.clientX, e.clientY) ? "move" : "";  // hover hint
+});
+function endDrag() {
+  drag = null; dragMarker = null; downClient = null; moved = false;
+  svg.classList.remove("grabbing");
+}
+svg.addEventListener("pointerup", e => {
+  if (drag && !moved) handleTap(e.clientX, e.clientY);   // tap (no pan) → move cursor
+  endDrag();
+});
+svg.addEventListener("pointercancel", endDrag);
+function stageCentre() {
+  const r = svg.getBoundingClientRect();
+  return clientToScene(r.left + r.width/2, r.top + r.height/2);
+}
+$("zin").addEventListener("click", () => zoomAt(1.3, stageCentre()));
+$("zout").addEventListener("click", () => zoomAt(1/1.3, stageCentre()));
+$("zfit").addEventListener("click", resetView);
+</script>
+</body>
+</html>
