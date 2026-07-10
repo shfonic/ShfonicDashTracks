@@ -29,6 +29,18 @@ F2 line, etc. A track just needs *one* class line to be useful — the rest can 
 > **F1 25 / F1 26** broadcast, so tracks are F1 for now. Other games slot in as their
 > position support lands.
 
+## Accuracy & provenance
+
+These maps are recorded and labelled **by hand, on best visual judgement** — driving to
+stay close to the track edges, following the on-screen racing line, and placing the
+sections (corners, straights, complexes) by eye, **not to any official specification or
+data source**. So expect some errors and inconsistencies: an edge that drifts, a corner
+span that's a little off, a turn number someone would argue with.
+
+That's fine — they're a starting point. **Corrections are very welcome, and you're free to
+change them or record your own.** If you spot something wrong, open a PR or a note in the
+file's `notes`.
+
 ## Using these in Shfonic Dash
 
 Drop the JSON files into the app's `tracks/` directory (or sync them over the app's LAN

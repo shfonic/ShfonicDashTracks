@@ -25,7 +25,6 @@ it lives in a `lines` map keyed by car class.
 | `sf_line` | dict | `{"pos": [x, z], "heading": <radians>}` — the start/finish line *(shared)* |
 | `sectors` | list | `[{"index", "pos": [x, z], "lap_dist_m"}]` — sector-boundary positions *(shared)* |
 | `sections` | list | labelled corners / straights / complexes, see [below](#sections) *(shared)* |
-| `markers` | list | reserved for point markers (unused today) |
 | `lines` | dict | **per car class**, see [below](#lines) |
 
 ### `lines`
