@@ -616,14 +616,14 @@ function renderMarks() {
       `<span class="type">${esc(m.type)}</span>` +
       `<button class="del" title="Delete section" aria-label="Delete section">×</button></div>` +
       `<div class="bot"><span class="rng">${rng}</span>${meta.join("")}</div>`;
-    li.querySelector(".del").addEventListener("click", e => {
+    onTap(li.querySelector(".del"), e => {
       e.stopPropagation();
       sections.splice(k, 1);
       markDirty();
       if (editIndex === k) resetForm(); else if (editIndex > k) editIndex--;
       renderMarks(); render();
     });
-    li.addEventListener("click", () => editSection(k));
+    onTap(li, () => editSection(k));
     host.appendChild(li);
   });
 }
@@ -851,14 +851,28 @@ $("clsNotes").addEventListener("input", e => {
 });
 
 // events
+// iOS WKWebView only synthesises `click` for a near-instant tap — a press that
+// dwells ~50ms fires pointerdown+pointerup but NO click (proven in the
+// interaction log), so click-bound buttons silently did nothing. `pointerup`
+// fires reliably, so activate on that instead: armed on the element's
+// pointerdown, fired on its pointerup (touch gets implicit pointer capture, so
+// the pointerup lands on the same element even if the finger drifts). Mouse
+// fires pointer events too, so desktop is unaffected.
+function onTap(el, fn) {
+  if (!el) return;
+  let armed = false;
+  el.addEventListener("pointerdown", () => { armed = true; });
+  el.addEventListener("pointercancel", () => { armed = false; });
+  el.addEventListener("pointerup", e => { if (armed) { armed = false; fn(e); } });
+}
 $("scrub").addEventListener("input", e => { cursor = +e.target.value; updateDist(); });
-$("setStart").addEventListener("click", () => {
-  logE("setStart-click"); pending.start = cursor; refreshPending(); render(); flash("Start set · " + fmt(cursor) + " m"); });
-$("setEnd").addEventListener("click", () => {
-  logE("setEnd-click"); pending.end = cursor; refreshPending(); render(); flash("End set · " + fmt(cursor) + " m"); });
-$("setApex").addEventListener("click", () => {
+onTap($("setStart"), () => {
+  logE("setStart-tap"); pending.start = cursor; refreshPending(); render(); flash("Start set · " + fmt(cursor) + " m"); });
+onTap($("setEnd"), () => {
+  logE("setEnd-tap"); pending.end = cursor; refreshPending(); render(); flash("End set · " + fmt(cursor) + " m"); });
+onTap($("setApex"), () => {
   pending.apex = cursor; refreshPending(); render(); flash("Apex set · " + fmt(cursor) + " m"); });
-$("clearSel").addEventListener("click", clearSelection);
+onTap($("clearSel"), clearSelection);
 $("type").addEventListener("change", updateFormFields);
 // Fine adjust: click nudges 1 m; press-and-hold repeats.
 function holdRepeat(btn, d) {
@@ -890,8 +904,8 @@ function holdRepeat(btn, d) {
 }
 holdRepeat($("nudgeDown"), -1);
 holdRepeat($("nudgeUp"), +1);
-$("add").addEventListener("click", submitSection);
-$("cancelEdit").addEventListener("click", resetForm);
+onTap($("add"), submitSection);
+onTap($("cancelEdit"), resetForm);
 
 function cleanSection(m) {
   const o = {};
@@ -1233,9 +1247,9 @@ function stageCentre() {
   const r = svg.getBoundingClientRect();
   return clientToScene(r.left + r.width/2, r.top + r.height/2);
 }
-$("zin").addEventListener("click", () => zoomAt(1.3, stageCentre()));
-$("zout").addEventListener("click", () => zoomAt(1/1.3, stageCentre()));
-$("zfit").addEventListener("click", resetView);
+onTap($("zin"), () => zoomAt(1.3, stageCentre()));
+onTap($("zout"), () => zoomAt(1/1.3, stageCentre()));
+onTap($("zfit"), resetView);
 </script>
 </body>
 </html>
