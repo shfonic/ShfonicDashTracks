@@ -484,18 +484,14 @@ function render() {
   // Reuse a persistent sceneG rather than recreating it each render. A brand-new
   // <g> has no reliable getScreenCTM() until the next layout/paint, so a tap
   // immediately after a render (e.g. just after adding a section, which re-renders)
-  // would hit a null CTM in handleTap and silently fail — which is what read as
-  // "Set start/end stop working after a corner or two". Keeping the same element
-  // and only clearing its children preserves a valid CTM. (The temporary debug
-  // overlay only "fixed" it by forcing a layout flush on every event.)
+  // would hit a null CTM in handleTap. Keeping the same element and only clearing
+  // its children preserves a valid CTM.
   if (!sceneG || sceneG.parentNode !== svg) {
     svg.textContent = "";
     sceneG = document.createElementNS(SVGNS, "g");
     svg.appendChild(sceneG);
-    logE("render", "new-sceneG");
   } else {
     sceneG.textContent = "";   // clear children, keep the laid-out element
-    logE("render", "reuse-sceneG");
   }
 
   if (vis.surface && t.left_edge.length && t.right_edge.length) {
@@ -867,9 +863,9 @@ function onTap(el, fn) {
 }
 $("scrub").addEventListener("input", e => { cursor = +e.target.value; updateDist(); });
 onTap($("setStart"), () => {
-  logE("setStart-tap"); pending.start = cursor; refreshPending(); render(); flash("Start set · " + fmt(cursor) + " m"); });
+  pending.start = cursor; refreshPending(); render(); flash("Start set · " + fmt(cursor) + " m"); });
 onTap($("setEnd"), () => {
-  logE("setEnd-tap"); pending.end = cursor; refreshPending(); render(); flash("End set · " + fmt(cursor) + " m"); });
+  pending.end = cursor; refreshPending(); render(); flash("End set · " + fmt(cursor) + " m"); });
 onTap($("setApex"), () => {
   pending.apex = cursor; refreshPending(); render(); flash("Apex set · " + fmt(cursor) + " m"); });
 onTap($("clearSel"), clearSelection);
@@ -960,7 +956,6 @@ window.SHFONIC = {
   isDirty:   ()  => _dirty,
   markSaved: ()  => { _dirty = false; },   // host wrote the file — no longer dirty
   embed:     ()  => document.body.classList.add("embedded"),  // hide open/save controls
-  dumpLog:   ()  => _log.join("\n"),       // TEMP: interaction trace, pulled by the host's Log button
 };
 $("copy").addEventListener("click", async () => {
   const json = JSON.stringify(exportObj(), null, 2);
@@ -1078,29 +1073,17 @@ function handleTap(cx, cy) {
   }
   const wp = line[best], pt = svg.createSVGPoint(); pt.x = sx(wp[0]); pt.y = sy(wp[1]);
   const ctm = sceneG.getScreenCTM();
-  if (!ctm) { logE("handleTap", "CTM-NULL"); return; }   // scene not laid out yet — ignore this tap
+  if (!ctm) return;                                    // scene not laid out yet — ignore this tap
   const sp = pt.matrixTransform(ctm);
-  const dpx = Math.hypot(sp.x - cx, sp.y - cy);
-  if (dpx > 52) { logE("handleTap", "miss " + Math.round(dpx) + "px"); return; }   // tapped away — ignore
+  if (Math.hypot(sp.x - cx, sp.y - cy) > 52) return;   // tapped away from the track — ignore
   cursor = Math.round(best / (n - 1) * total());
   $("scrub").value = cursor; updateDist();
-  logE("handleTap", "OK->cur" + cursor);
 }
 // Multi-touch: one finger pans / taps the track / drags a dot; two fingers
 // pinch-zoom (and pan together). All input arrives as pointer events because
 // the SVG sets touch-action:none, so the browser never scrolls or zooms itself.
 const pointers = new Map();
 let pinchPrev = null;
-// TEMP interaction trace — pure in-memory array pushes (no DOM, no layout read),
-// so unlike the on-screen readout it can't perturb gesture timing / mask the bug.
-// "Copy log" lifts it out; SHFONIC.dumpLog() exposes it to the host too.
-const _log = [];
-function logE(ev, ex) {
-  if (_log.length > 800) _log.shift();
-  _log.push([Math.round(performance.now()), ev, "p" + pointers.size,
-             "c" + Math.round(cursor), "s" + pending.start, "e" + pending.end,
-             ex == null ? "" : ex].join(" "));
-}
 function pinchState() {
   const p = [...pointers.values()], a = p[0], b = p[1];
   return { dist: Math.hypot(a.x - b.x, a.y - b.y),
@@ -1126,17 +1109,15 @@ svg.addEventListener("pointerdown", e => {
   // other buttons go dead. Without capture, a tap on a button always reaches
   // the button.
   pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, t: Date.now() });
-  logE("svg-down", e.pointerType + " id" + e.pointerId);
   if (pointers.size === 2) {                    // second finger down → pinch
     drag = null; dragMarker = null; downClient = null;
     pinchPrev = pinchState(); svg.classList.add("grabbing");
-    logE("PINCH-start");
     return;
   }
-  if (pointers.size > 2) { logE("down>2", "ignored"); return; }
+  if (pointers.size > 2) return;
   svg.classList.add("grabbing");
   const m = hitMarker(e.clientX, e.clientY);
-  if (m) { dragMarker = m; logE("grab-dot", m); return; }   // grab a cursor/start/end/apex dot
+  if (m) { dragMarker = m; return; }            // grab a cursor/start/end/apex dot
   drag = clientToScene(e.clientX, e.clientY);    // otherwise pan (or, if no move, a tap)
   downClient = { x: e.clientX, y: e.clientY }; moved = false;
 });
@@ -1180,34 +1161,24 @@ function dropPointer(id) {
 }
 let lastTap = 0, lastTapXY = null;
 svg.addEventListener("pointerup", e => {
-  logE("svg-up", "id" + e.pointerId + " drag" + (drag ? 1 : 0)
-    + " moved" + (moved ? 1 : 0) + " dm" + (dragMarker || "-"));
   if (pointers.size === 1 && drag && !moved) {
     const now = Date.now();
     if (now - lastTap < 300 && lastTapXY &&
         Math.hypot(e.clientX - lastTapXY.x, e.clientY - lastTapXY.y) < 30) {
-      logE("dbl-tap-fit"); resetView(); flash("Fit to view"); lastTap = 0;   // double-tap → fit
+      resetView(); flash("Fit to view"); lastTap = 0;   // double-tap → fit
     } else {
       handleTap(e.clientX, e.clientY);                    // single tap → cursor
       lastTap = now; lastTapXY = { x: e.clientX, y: e.clientY };
     }
-  } else {
-    logE("svg-up", "no-tap (sz" + pointers.size + " drag" + (drag ? 1 : 0) + " moved" + (moved ? 1 : 0) + ")");
   }
   dropPointer(e.pointerId);
 });
-svg.addEventListener("pointercancel", e => { logE("svg-cancel", "id" + e.pointerId); dropPointer(e.pointerId); });
+svg.addEventListener("pointercancel", e => dropPointer(e.pointerId));
 // Safety net: if a pointerup/cancel ever bypasses the SVG (capture lost, gesture
 // hijacked by the OS), the window still sees it — clean up so no phantom finger
 // lingers. dropPointer is idempotent, so a double call is harmless.
-window.addEventListener("pointerup", e => {
-  if (pointers.has(e.pointerId)) logE("win-up", "id" + e.pointerId + " (SVG missed release)");
-  dropPointer(e.pointerId);
-});
-window.addEventListener("pointercancel", e => {
-  if (pointers.has(e.pointerId)) logE("win-cancel", "id" + e.pointerId + " (SVG missed)");
-  dropPointer(e.pointerId);
-});
+window.addEventListener("pointerup", e => dropPointer(e.pointerId));
+window.addEventListener("pointercancel", e => dropPointer(e.pointerId));
 // Stronger safety net for iOS WKWebView, where a pointerup/cancel can be
 // dropped entirely (a native gesture, the app's JS bridge, or a re-render
 // mid-gesture after adding a section) — leaving a phantom entry in `pointers`
@@ -1216,8 +1187,7 @@ window.addEventListener("pointercancel", e => {
 // the reliable "every finger is off the glass" signal, so wipe all pointer
 // state then. Only fires on touch devices; harmless when no gesture is active.
 function clearAllPointers(e) {
-  if (e.touches && e.touches.length) { logE(e.type, "touches" + e.touches.length); return; }   // fingers still down
-  logE(e.type, "all-up wipe" + (pointers.size ? " (had " + pointers.size + ")" : ""));
+  if (e.touches && e.touches.length) return;   // fingers still down
   pointers.clear(); pinchPrev = null; endDrag();
 }
 window.addEventListener("touchend", clearAllPointers);
@@ -1230,18 +1200,7 @@ window.addEventListener("touchcancel", clearAllPointers);
 // own handler, and scoped to non-SVG targets so it can NEVER interfere with
 // panning, dragging a pin or tapping the track.
 document.addEventListener("pointerdown", e => {
-  if (!svg.contains(e.target)) {
-    logE("doc-pdown", e.target.id || e.target.tagName);   // which control was pressed
-    pointers.clear(); pinchPrev = null; endDrag();
-  }
-}, true);
-// TEMP: trace the full tap chain on the controls (outside the map) so we can see
-// whether Set start/end taps even produce pointerup / click, or where they die.
-document.addEventListener("pointerup", e => {
-  if (!svg.contains(e.target)) logE("doc-pup", e.target.id || e.target.tagName);
-}, true);
-document.addEventListener("click", e => {
-  logE("doc-click", e.target.id || e.target.tagName);
+  if (!svg.contains(e.target)) { pointers.clear(); pinchPrev = null; endDrag(); }
 }, true);
 function stageCentre() {
   const r = svg.getBoundingClientRect();
