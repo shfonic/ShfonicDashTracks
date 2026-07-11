@@ -1158,6 +1158,19 @@ function clearAllPointers(e) {
 }
 window.addEventListener("touchend", clearAllPointers);
 window.addEventListener("touchcancel", clearAllPointers);
+// Primary guard against the phantom finger (the others above only clean up on
+// pointerup/touchend, which iOS WKWebView can drop entirely after a re-render
+// mid-gesture — e.g. adding a section — leaving a stale entry in `pointers` so
+// the next single tap reads as a two-finger pinch and tap-to-place / Set
+// start/end go dead). A touchstart reporting exactly ONE finger means only one
+// finger is on the glass right now, so any tracked pointer is stale: wipe the
+// map before WebKit fires this tap's pointerdown (touchstart precedes it), and
+// the tap records cleanly as a single finger. Never fires mid-pinch, where
+// touches.length is 2. This is what makes tapping recover on the *next* touch
+// instead of needing the editor closed and reopened.
+window.addEventListener("touchstart", e => {
+  if (e.touches.length === 1) { pointers.clear(); pinchPrev = null; endDrag(); }
+}, { passive: true });
 function stageCentre() {
   const r = svg.getBoundingClientRect();
   return clientToScene(r.left + r.width/2, r.top + r.height/2);
