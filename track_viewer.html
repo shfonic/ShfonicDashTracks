@@ -65,6 +65,12 @@
     background: rgba(10,13,18,.7); border: 1px solid var(--line);
     border-radius: 5px; padding: 6px 9px; font-variant-numeric: tabular-nums;
     pointer-events: none; }
+  /* TEMP diagnostic readout (remove once the Set start/end issue is fixed). */
+  #dbg { position: fixed; top: 8px; left: 8px; z-index: 99999;
+    font-family: var(--mono); font-size: 11px; line-height: 1.35;
+    color: #ffb300; background: rgba(10,13,18,.88);
+    border: 1px solid var(--line); border-radius: 5px; padding: 5px 8px;
+    pointer-events: none; white-space: pre; font-variant-numeric: tabular-nums; }
   .empty { position: absolute; inset: 0; display: flex; align-items: center;
     justify-content: center; }
   .empty[hidden] { display: none; }   /* beat the flex display when a track loads */
@@ -227,6 +233,7 @@
       </button>
     </div>
     <div class="hud" id="hud" hidden></div>
+    <div id="dbg">dbg</div>
     <div class="empty" id="empty">
       <div class="card">
         <h2>Open a recorded track</h2>
@@ -840,9 +847,9 @@ $("clsNotes").addEventListener("input", e => {
 // events
 $("scrub").addEventListener("input", e => { cursor = +e.target.value; updateDist(); });
 $("setStart").addEventListener("click", () => {
-  pending.start = cursor; refreshPending(); render(); flash("Start set · " + fmt(cursor) + " m"); });
+  _setN++; dbg("setStart click"); pending.start = cursor; refreshPending(); render(); flash("Start set · " + fmt(cursor) + " m"); });
 $("setEnd").addEventListener("click", () => {
-  pending.end = cursor; refreshPending(); render(); flash("End set · " + fmt(cursor) + " m"); });
+  _setN++; dbg("setEnd click"); pending.end = cursor; refreshPending(); render(); flash("End set · " + fmt(cursor) + " m"); });
 $("setApex").addEventListener("click", () => {
   pending.apex = cursor; refreshPending(); render(); flash("Apex set · " + fmt(cursor) + " m"); });
 $("clearSel").addEventListener("click", clearSelection);
@@ -1050,15 +1057,25 @@ function handleTap(cx, cy) {
   }
   const wp = line[best], pt = svg.createSVGPoint(); pt.x = sx(wp[0]); pt.y = sy(wp[1]);
   const sp = pt.matrixTransform(sceneG.getScreenCTM());
-  if (Math.hypot(sp.x - cx, sp.y - cy) > 52) return;   // tapped away from the track — ignore
+  if (Math.hypot(sp.x - cx, sp.y - cy) > 52) { dbg("tap-miss"); return; }   // tapped away from the track — ignore
   cursor = Math.round(best / (n - 1) * total());
   $("scrub").value = cursor; updateDist();
+  _tapN++; dbg("tap");
 }
 // Multi-touch: one finger pans / taps the track / drags a dot; two fingers
 // pinch-zoom (and pan together). All input arrives as pointer events because
 // the SVG sets touch-action:none, so the browser never scrolls or zooms itself.
 const pointers = new Map();
 let pinchPrev = null;
+// TEMP diagnostic — remove with #dbg once the Set start/end issue is pinned down.
+let _downN = 0, _tapN = 0, _setN = 0;
+function dbg(a) {
+  const el = document.getElementById("dbg");
+  if (!el) return;
+  el.textContent =
+    `ptr:${pointers.size} cur:${Math.round(cursor)} s:${pending.start} e:${pending.end}\n`
+    + `down:${_downN} tap:${_tapN} set:${_setN}${a ? "  " + a : ""}`;
+}
 function pinchState() {
   const p = [...pointers.values()], a = p[0], b = p[1];
   return { dist: Math.hypot(a.x - b.x, a.y - b.y),
@@ -1084,9 +1101,11 @@ svg.addEventListener("pointerdown", e => {
   // other buttons go dead. Without capture, a tap on a button always reaches
   // the button.
   pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, t: Date.now() });
+  _downN++; dbg("down " + e.pointerType);
   if (pointers.size === 2) {                    // second finger down → pinch
     drag = null; dragMarker = null; downClient = null;
     pinchPrev = pinchState(); svg.classList.add("grabbing");
+    dbg("PINCH");
     return;
   }
   if (pointers.size > 2) return;
@@ -1147,8 +1166,9 @@ svg.addEventListener("pointerup", e => {
     }
   }
   dropPointer(e.pointerId);
+  dbg("up");
 });
-svg.addEventListener("pointercancel", e => dropPointer(e.pointerId));
+svg.addEventListener("pointercancel", e => { dropPointer(e.pointerId); dbg("cancel"); });
 // Safety net: if a pointerup/cancel ever bypasses the SVG (capture lost, gesture
 // hijacked by the OS), the window still sees it — clean up so no phantom finger
 // lingers. dropPointer is idempotent, so a double call is harmless.
@@ -1175,7 +1195,10 @@ window.addEventListener("touchcancel", clearAllPointers);
 // own handler, and scoped to non-SVG targets so it can NEVER interfere with
 // panning, dragging a pin or tapping the track.
 document.addEventListener("pointerdown", e => {
-  if (!svg.contains(e.target)) { pointers.clear(); pinchPrev = null; endDrag(); }
+  if (!svg.contains(e.target)) {
+    pointers.clear(); pinchPrev = null; endDrag();
+    dbg("off-map " + (e.target.id || e.target.tagName));
+  }
 }, true);
 function stageCentre() {
   const r = svg.getBoundingClientRect();
