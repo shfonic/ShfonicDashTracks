@@ -1217,9 +1217,17 @@ window.addEventListener("touchcancel", clearAllPointers);
 // panning, dragging a pin or tapping the track.
 document.addEventListener("pointerdown", e => {
   if (!svg.contains(e.target)) {
-    if (pointers.size) logE("off-map", (e.target.id || e.target.tagName) + " wiped p" + pointers.size);
+    logE("doc-pdown", e.target.id || e.target.tagName);   // which control was pressed
     pointers.clear(); pinchPrev = null; endDrag();
   }
+}, true);
+// TEMP: trace the full tap chain on the controls (outside the map) so we can see
+// whether Set start/end taps even produce pointerup / click, or where they die.
+document.addEventListener("pointerup", e => {
+  if (!svg.contains(e.target)) logE("doc-pup", e.target.id || e.target.tagName);
+}, true);
+document.addEventListener("click", e => {
+  logE("doc-click", e.target.id || e.target.tagName);
 }, true);
 function stageCentre() {
   const r = svg.getBoundingClientRect();
