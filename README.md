@@ -17,6 +17,7 @@ Which tracks exist and what's filled in. `—` = not done yet — **contribution
 <!-- COVERAGE:START -->
 | Game | Track | Class lines | Pit | Sections | Gears | Notes |
 |---|---|---|:--:|:--:|:--:|---|
+| f1_25 | Abu Dhabi | formula1_2026 | ✅ | 17 | — |  |
 | f1_25 | Imola | formula1_2026 | ✅ | 19 | — |  |
 | f1_25 | Melbourne | formula1_2026 | ✅ | 17 | — |  |
 | f1_25 | Silverstone | formula1_2026 | ✅ | 23 | — |  |
