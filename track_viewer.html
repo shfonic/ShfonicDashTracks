@@ -481,9 +481,20 @@ function render() {
   // size as you zoom — the track detail grows, the markers don't (so you can
   // place an apex precisely).
   const t = TRACK, tot = total(), s = strokeScale() / pz.k;
-  svg.innerHTML = "";
-  sceneG = document.createElementNS(SVGNS, "g");
-  svg.appendChild(sceneG);
+  // Reuse a persistent sceneG rather than recreating it each render. A brand-new
+  // <g> has no reliable getScreenCTM() until the next layout/paint, so a tap
+  // immediately after a render (e.g. just after adding a section, which re-renders)
+  // would hit a null CTM in handleTap and silently fail — which is what read as
+  // "Set start/end stop working after a corner or two". Keeping the same element
+  // and only clearing its children preserves a valid CTM. (The temporary debug
+  // overlay only "fixed" it by forcing a layout flush on every event.)
+  if (!sceneG || sceneG.parentNode !== svg) {
+    svg.textContent = "";
+    sceneG = document.createElementNS(SVGNS, "g");
+    svg.appendChild(sceneG);
+  } else {
+    sceneG.textContent = "";   // clear children, keep the laid-out element
+  }
 
   if (vis.surface && t.left_edge.length && t.right_edge.length) {
     const ring = [...t.left_edge, ...[...t.right_edge].reverse()];
@@ -1049,7 +1060,9 @@ function handleTap(cx, cy) {
     if (d < bd) { bd = d; best = i; }
   }
   const wp = line[best], pt = svg.createSVGPoint(); pt.x = sx(wp[0]); pt.y = sy(wp[1]);
-  const sp = pt.matrixTransform(sceneG.getScreenCTM());
+  const ctm = sceneG.getScreenCTM();
+  if (!ctm) return;                                    // scene not laid out yet — ignore this tap
+  const sp = pt.matrixTransform(ctm);
   if (Math.hypot(sp.x - cx, sp.y - cy) > 52) return;   // tapped away from the track — ignore
   cursor = Math.round(best / (n - 1) * total());
   $("scrub").value = cursor; updateDist();
