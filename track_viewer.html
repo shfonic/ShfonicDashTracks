@@ -65,6 +65,10 @@
     background: rgba(10,13,18,.7); border: 1px solid var(--line);
     border-radius: 5px; padding: 6px 9px; font-variant-numeric: tabular-nums;
     pointer-events: none; }
+  /* TEMP: copy the interaction trace out for debugging (remove with the log). */
+  #logbtn { position: fixed; right: 10px; bottom: 10px; z-index: 99999;
+    font: 12px var(--mono); color: #1a1300; background: #ffb300;
+    border: none; border-radius: 6px; padding: 9px 13px; opacity: .9; }
   .empty { position: absolute; inset: 0; display: flex; align-items: center;
     justify-content: center; }
   .empty[hidden] { display: none; }   /* beat the flex display when a track loads */
@@ -227,6 +231,7 @@
       </button>
     </div>
     <div class="hud" id="hud" hidden></div>
+    <button id="logbtn" type="button">Copy log</button>
     <div class="empty" id="empty">
       <div class="card">
         <h2>Open a recorded track</h2>
@@ -492,8 +497,10 @@ function render() {
     svg.textContent = "";
     sceneG = document.createElementNS(SVGNS, "g");
     svg.appendChild(sceneG);
+    logE("render", "new-sceneG");
   } else {
     sceneG.textContent = "";   // clear children, keep the laid-out element
+    logE("render", "reuse-sceneG");
   }
 
   if (vis.surface && t.left_edge.length && t.right_edge.length) {
@@ -851,9 +858,9 @@ $("clsNotes").addEventListener("input", e => {
 // events
 $("scrub").addEventListener("input", e => { cursor = +e.target.value; updateDist(); });
 $("setStart").addEventListener("click", () => {
-  pending.start = cursor; refreshPending(); render(); flash("Start set · " + fmt(cursor) + " m"); });
+  logE("setStart-click"); pending.start = cursor; refreshPending(); render(); flash("Start set · " + fmt(cursor) + " m"); });
 $("setEnd").addEventListener("click", () => {
-  pending.end = cursor; refreshPending(); render(); flash("End set · " + fmt(cursor) + " m"); });
+  logE("setEnd-click"); pending.end = cursor; refreshPending(); render(); flash("End set · " + fmt(cursor) + " m"); });
 $("setApex").addEventListener("click", () => {
   pending.apex = cursor; refreshPending(); render(); flash("Apex set · " + fmt(cursor) + " m"); });
 $("clearSel").addEventListener("click", clearSelection);
@@ -944,7 +951,13 @@ window.SHFONIC = {
   isDirty:   ()  => _dirty,
   markSaved: ()  => { _dirty = false; },   // host wrote the file — no longer dirty
   embed:     ()  => document.body.classList.add("embedded"),  // hide open/save controls
+  dumpLog:   ()  => _log.join("\n"),       // TEMP: interaction trace for debugging
 };
+$("logbtn").addEventListener("click", async () => {
+  const txt = _log.join("\n");
+  try { await navigator.clipboard.writeText(txt); flash("Log copied — paste it to me"); }
+  catch { flash("Copy blocked"); }
+});
 $("copy").addEventListener("click", async () => {
   const json = JSON.stringify(exportObj(), null, 2);
   try { await navigator.clipboard.writeText(json); flash("Sections JSON copied"); }
@@ -1061,17 +1074,29 @@ function handleTap(cx, cy) {
   }
   const wp = line[best], pt = svg.createSVGPoint(); pt.x = sx(wp[0]); pt.y = sy(wp[1]);
   const ctm = sceneG.getScreenCTM();
-  if (!ctm) return;                                    // scene not laid out yet — ignore this tap
+  if (!ctm) { logE("handleTap", "CTM-NULL"); return; }   // scene not laid out yet — ignore this tap
   const sp = pt.matrixTransform(ctm);
-  if (Math.hypot(sp.x - cx, sp.y - cy) > 52) return;   // tapped away from the track — ignore
+  const dpx = Math.hypot(sp.x - cx, sp.y - cy);
+  if (dpx > 52) { logE("handleTap", "miss " + Math.round(dpx) + "px"); return; }   // tapped away — ignore
   cursor = Math.round(best / (n - 1) * total());
   $("scrub").value = cursor; updateDist();
+  logE("handleTap", "OK->cur" + cursor);
 }
 // Multi-touch: one finger pans / taps the track / drags a dot; two fingers
 // pinch-zoom (and pan together). All input arrives as pointer events because
 // the SVG sets touch-action:none, so the browser never scrolls or zooms itself.
 const pointers = new Map();
 let pinchPrev = null;
+// TEMP interaction trace — pure in-memory array pushes (no DOM, no layout read),
+// so unlike the on-screen readout it can't perturb gesture timing / mask the bug.
+// "Copy log" lifts it out; SHFONIC.dumpLog() exposes it to the host too.
+const _log = [];
+function logE(ev, ex) {
+  if (_log.length > 800) _log.shift();
+  _log.push([Math.round(performance.now()), ev, "p" + pointers.size,
+             "c" + Math.round(cursor), "s" + pending.start, "e" + pending.end,
+             ex == null ? "" : ex].join(" "));
+}
 function pinchState() {
   const p = [...pointers.values()], a = p[0], b = p[1];
   return { dist: Math.hypot(a.x - b.x, a.y - b.y),
@@ -1097,15 +1122,17 @@ svg.addEventListener("pointerdown", e => {
   // other buttons go dead. Without capture, a tap on a button always reaches
   // the button.
   pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, t: Date.now() });
+  logE("svg-down", e.pointerType + " id" + e.pointerId);
   if (pointers.size === 2) {                    // second finger down → pinch
     drag = null; dragMarker = null; downClient = null;
     pinchPrev = pinchState(); svg.classList.add("grabbing");
+    logE("PINCH-start");
     return;
   }
-  if (pointers.size > 2) return;
+  if (pointers.size > 2) { logE("down>2", "ignored"); return; }
   svg.classList.add("grabbing");
   const m = hitMarker(e.clientX, e.clientY);
-  if (m) { dragMarker = m; return; }            // grab a cursor/start/end/apex dot
+  if (m) { dragMarker = m; logE("grab-dot", m); return; }   // grab a cursor/start/end/apex dot
   drag = clientToScene(e.clientX, e.clientY);    // otherwise pan (or, if no move, a tap)
   downClient = { x: e.clientX, y: e.clientY }; moved = false;
 });
@@ -1149,24 +1176,34 @@ function dropPointer(id) {
 }
 let lastTap = 0, lastTapXY = null;
 svg.addEventListener("pointerup", e => {
+  logE("svg-up", "id" + e.pointerId + " drag" + (drag ? 1 : 0)
+    + " moved" + (moved ? 1 : 0) + " dm" + (dragMarker || "-"));
   if (pointers.size === 1 && drag && !moved) {
     const now = Date.now();
     if (now - lastTap < 300 && lastTapXY &&
         Math.hypot(e.clientX - lastTapXY.x, e.clientY - lastTapXY.y) < 30) {
-      resetView(); flash("Fit to view"); lastTap = 0;   // double-tap → fit
+      logE("dbl-tap-fit"); resetView(); flash("Fit to view"); lastTap = 0;   // double-tap → fit
     } else {
       handleTap(e.clientX, e.clientY);                    // single tap → cursor
       lastTap = now; lastTapXY = { x: e.clientX, y: e.clientY };
     }
+  } else {
+    logE("svg-up", "no-tap (sz" + pointers.size + " drag" + (drag ? 1 : 0) + " moved" + (moved ? 1 : 0) + ")");
   }
   dropPointer(e.pointerId);
 });
-svg.addEventListener("pointercancel", e => dropPointer(e.pointerId));
+svg.addEventListener("pointercancel", e => { logE("svg-cancel", "id" + e.pointerId); dropPointer(e.pointerId); });
 // Safety net: if a pointerup/cancel ever bypasses the SVG (capture lost, gesture
 // hijacked by the OS), the window still sees it — clean up so no phantom finger
 // lingers. dropPointer is idempotent, so a double call is harmless.
-window.addEventListener("pointerup", e => dropPointer(e.pointerId));
-window.addEventListener("pointercancel", e => dropPointer(e.pointerId));
+window.addEventListener("pointerup", e => {
+  if (pointers.has(e.pointerId)) logE("win-up", "id" + e.pointerId + " (SVG missed release)");
+  dropPointer(e.pointerId);
+});
+window.addEventListener("pointercancel", e => {
+  if (pointers.has(e.pointerId)) logE("win-cancel", "id" + e.pointerId + " (SVG missed)");
+  dropPointer(e.pointerId);
+});
 // Stronger safety net for iOS WKWebView, where a pointerup/cancel can be
 // dropped entirely (a native gesture, the app's JS bridge, or a re-render
 // mid-gesture after adding a section) — leaving a phantom entry in `pointers`
@@ -1175,7 +1212,8 @@ window.addEventListener("pointercancel", e => dropPointer(e.pointerId));
 // the reliable "every finger is off the glass" signal, so wipe all pointer
 // state then. Only fires on touch devices; harmless when no gesture is active.
 function clearAllPointers(e) {
-  if (e.touches && e.touches.length) return;   // fingers still down
+  if (e.touches && e.touches.length) { logE(e.type, "touches" + e.touches.length); return; }   // fingers still down
+  logE(e.type, "all-up wipe" + (pointers.size ? " (had " + pointers.size + ")" : ""));
   pointers.clear(); pinchPrev = null; endDrag();
 }
 window.addEventListener("touchend", clearAllPointers);
@@ -1188,7 +1226,10 @@ window.addEventListener("touchcancel", clearAllPointers);
 // own handler, and scoped to non-SVG targets so it can NEVER interfere with
 // panning, dragging a pin or tapping the track.
 document.addEventListener("pointerdown", e => {
-  if (!svg.contains(e.target)) { pointers.clear(); pinchPrev = null; endDrag(); }
+  if (!svg.contains(e.target)) {
+    if (pointers.size) logE("off-map", (e.target.id || e.target.tagName) + " wiped p" + pointers.size);
+    pointers.clear(); pinchPrev = null; endDrag();
+  }
 }, true);
 function stageCentre() {
   const r = svg.getBoundingClientRect();
