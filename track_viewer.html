@@ -849,22 +849,31 @@ $("clearSel").addEventListener("click", clearSelection);
 $("type").addEventListener("change", updateFormFields);
 // Fine adjust: click nudges 1 m; press-and-hold repeats.
 function holdRepeat(btn, d) {
-  let delay, timer, active = false;
+  let delay, timer, lastDown = 0;
   const touchDev = window.matchMedia("(pointer: coarse)").matches;
-  const stop = () => { active = false; clearTimeout(delay); clearInterval(timer); };
+  const stop = () => { clearTimeout(delay); clearInterval(timer); delay = timer = null; };
   btn.addEventListener("pointerdown", e => {
     // One physical tap must nudge exactly once. iOS WKWebView can deliver a
     // duplicate pointerdown for the same tap — a compat-mouse ghost, or a
     // second touch pointerdown before the finger lifts — which would nudge
     // twice (the "moves 2 m" bug). Ignore the mouse ghost on a touch device,
-    // and any pointerdown while a press is already active.
-    if (active) return;
+    // and debounce a near-simultaneous duplicate. NB: no `active` latch — a
+    // dropped pointerup (iOS WKWebView, after the re-render adding a section
+    // triggers) would leave it stuck true and the button permanently dead.
     if (touchDev && e.pointerType === "mouse") return;
-    active = true;
+    const now = Date.now();
+    if (now - lastDown < 80) return;
+    lastDown = now;
+    stop();                            // clear any stray repeat from a missed release
     e.preventDefault(); nudge(d);
     delay = setTimeout(() => { timer = setInterval(() => nudge(d), 80); }, 350);
   });
   ["pointerup","pointerleave","pointercancel"].forEach(ev => btn.addEventListener(ev, stop));
+  // Safety net for a release the button never sees (dropped by the WebView, or
+  // the finger lifted off the button): any release anywhere stops the repeat,
+  // so it can never run away or leave the button wedged.
+  ["pointerup","pointercancel","touchend","touchcancel"].forEach(
+    ev => window.addEventListener(ev, stop));
 }
 holdRepeat($("nudgeDown"), -1);
 holdRepeat($("nudgeUp"), +1);
@@ -1158,19 +1167,16 @@ function clearAllPointers(e) {
 }
 window.addEventListener("touchend", clearAllPointers);
 window.addEventListener("touchcancel", clearAllPointers);
-// Primary guard against the phantom finger (the others above only clean up on
-// pointerup/touchend, which iOS WKWebView can drop entirely after a re-render
-// mid-gesture — e.g. adding a section — leaving a stale entry in `pointers` so
-// the next single tap reads as a two-finger pinch and tap-to-place / Set
-// start/end go dead). A touchstart reporting exactly ONE finger means only one
-// finger is on the glass right now, so any tracked pointer is stale: wipe the
-// map before WebKit fires this tap's pointerdown (touchstart precedes it), and
-// the tap records cleanly as a single finger. Never fires mid-pinch, where
-// touches.length is 2. This is what makes tapping recover on the *next* touch
-// instead of needing the editor closed and reopened.
-window.addEventListener("touchstart", e => {
-  if (e.touches.length === 1) { pointers.clear(); pinchPrev = null; endDrag(); }
-}, { passive: true });
+// Any touch that lands OUTSIDE the map (a button, a form field, the section
+// list) means the current map gesture is over, so wipe any leftover pointer
+// state — this is what recovers the map after a phantom finger is left by a
+// dropped pointerup/touchend (iOS WKWebView can drop them after the re-render
+// that adding a section triggers). Capture phase so it runs before the target's
+// own handler, and scoped to non-SVG targets so it can NEVER interfere with
+// panning, dragging a pin or tapping the track.
+document.addEventListener("pointerdown", e => {
+  if (!svg.contains(e.target)) { pointers.clear(); pinchPrev = null; endDrag(); }
+}, true);
 function stageCentre() {
   const r = svg.getBoundingClientRect();
   return clientToScene(r.left + r.width/2, r.top + r.height/2);
