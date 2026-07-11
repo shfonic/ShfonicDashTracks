@@ -62,7 +62,6 @@ S/F** when `start_m > end_m` (the main straight), and spans may overlap.
   "start_m": 351,
   "end_m": 531,
   "apex_m": 429,         // optional apex (corner only), within the span
-  "gear": 3,             // optional (corner only)
   "severity": "high",    // optional: low | medium | high (corner only)
   "overtake": "yes"      // optional: yes | no (corner / straight)
 }
@@ -74,15 +73,19 @@ Fields are type-specific (this is what the editor shows and validates):
 |---|:--:|:--:|:--:|:--:|:--:|
 | `turn` | ✓ | – | – | – | – |
 | `name` | optional | required | required | required | required |
-| `apex_m` · `gear` · `severity` | ✓ | – | – | – | – |
+| `apex_m` · `severity` | ✓ | – | – | – | – |
 | `overtake` | ✓ | – | – | ✓ | – |
 | `members` | – | optional | required | – | – |
 
 **`chicane`** and **`complex`** are *grouping* types: they name a corner sequence and list
-its corners by turn number in `members`; per-corner gear/apex live on those member corner
-sections (which exist in their own right — the group overlays them). A `complex` must list
-its members; a `chicane` may (e.g. to carry the two corners' gears) or may be a bare named
-span like "Bus Stop".
+its corners by turn number in `members`; those member corners exist in their own right — the
+group overlays them. A `complex` must list its members; a `chicane` may or may be a bare
+named span like "Bus Stop".
+
+> **Gear is not a section field.** Recommended gear is car-specific (an F1 car, F2 and a GT3
+> take the same corner in different gears), whereas `sections` is shared car-agnostic
+> geometry — so gear lives per class in `lines[car_class].gears`, not on a section. (Severity
+> and overtake are roughly car-agnostic, so they stay on the shared section.)
 
 ```jsonc
 { "name": "Maggots and Becketts and Chapel", "type": "complex",

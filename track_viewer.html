@@ -177,7 +177,7 @@
     .chips { flex-wrap: wrap; margin-left: 0; }   /* wrap, never run off-screen */
 
     /* Finger-friendly targets, and let control rows wrap instead of running
-       off the right edge (the ± nudge and the gear/severity/overtake selects). */
+       off the right edge (the ± nudge and the severity/overtake selects). */
     .mapctl button { width: 42px; height: 42px; font-size: 22px; }
     .dist-row .nudge button { width: 46px; height: 40px; font-size: 20px; }
     aside button, aside select, aside input[type=text] { min-height: 42px; }
@@ -308,11 +308,6 @@
                title="Turn numbers this complex groups (comma-separated)" disabled />
       </div>
       <div class="row" id="metaRow" style="margin-top:8px">
-        <select id="gear" title="Recommended gear" disabled>
-          <option value="">Gear —</option>
-          <option>1</option><option>2</option><option>3</option><option>4</option>
-          <option>5</option><option>6</option><option>7</option><option>8</option>
-        </select>
         <select id="severity" title="Corner severity" disabled>
           <option value="">Severity —</option>
           <option value="low">low</option><option value="medium">medium</option>
@@ -600,7 +595,6 @@ function renderMarks() {
     const nm = m.name ? esc(m.name) : (m.turn ? "" : "(unnamed)");
     const meta = [];
     if (m.apex_m != null) meta.push(`<span class="meta">apex ${fmt(m.apex_m)}m</span>`);
-    if (m.gear) meta.push(`<span class="meta">gear ${esc(m.gear)}</span>`);
     if (m.severity) meta.push(`<span class="meta sev-${esc(m.severity)}">${esc(m.severity)}</span>`);
     if (m.overtake === "yes") meta.push(`<span class="meta ot">overtake</span>`);
     else if (m.overtake === "no") meta.push(`<span class="meta">no overtake</span>`);
@@ -633,7 +627,7 @@ function refreshPending() {
 }
 function setEnabled(on) {
   ["scrub","nudgeDown","nudgeUp","setStart","setEnd","setApex","clearSel","turn","name",
-   "type","members","gear","severity","overtake","add","download","copy"]
+   "type","members","severity","overtake","add","download","copy"]
     .forEach(id => $(id).disabled = !on);
 }
 function nudge(d) {
@@ -647,8 +641,7 @@ function clearSelection() { pending = { start:null, end:null, apex:null }; refre
 // Show only the fields that make sense for the chosen type:
 //   corner    — Turn #, Apex, Gear, Severity, Overtake
 //   straight  — Overtake (+ Name)
-//   chicane / complex — Members (they group other corners; gear/apex live on
-//                       those member corner sections, not here)
+//   chicane / complex — Members (they group other corners by turn number)
 //   other     — Name only
 function updateFormFields() {
   const type = $("type").value;
@@ -656,16 +649,15 @@ function updateFormFields() {
   const grouping  = type === "chicane" || type === "complex";
   $("turn").hidden       = !isCorner;
   $("setApex").hidden    = !isCorner;
-  $("gear").hidden       = !isCorner;
   $("severity").hidden   = !isCorner;
   $("overtake").hidden   = !(isCorner || type === "straight");
-  // Hide the whole gear/severity/overtake row when none of them apply.
+  // Hide the whole severity/overtake row when neither applies.
   $("metaRow").hidden    = !(isCorner || type === "straight");
   $("membersRow").hidden = !grouping;
 }
 function readForm() {
   // Only read fields that apply to the type, so a value left over from another
-  // type (e.g. a gear set while it was a corner, then switched to straight)
+  // type (e.g. a severity set while it was a corner, then switched to straight)
   // never leaks into the saved section.
   const type = $("type").value;
   const isCorner = type === "corner";
@@ -677,7 +669,6 @@ function readForm() {
     start_m: pending.start != null ? Math.round(pending.start) : null,
     end_m:   pending.end   != null ? Math.round(pending.end)   : null,
     apex_m:  isCorner && pending.apex != null ? Math.round(pending.apex) : null,
-    gear: isCorner && $("gear").value ? +$("gear").value : null,
     severity: isCorner ? $("severity").value : "",
     overtake: (isCorner || type === "straight") ? $("overtake").value : "",
     members: grouping
@@ -688,7 +679,7 @@ function readForm() {
 function resetForm() {
   editIndex = null;
   pending = { start:null, end:null, apex:null };
-  ["turn","name","gear","severity","overtake","members"].forEach(id => $(id).value = "");
+  ["turn","name","severity","overtake","members"].forEach(id => $(id).value = "");
   $("type").value = "corner";
   $("formTitle").textContent = "Add a section";
   $("add").textContent = "Add section";
@@ -702,7 +693,6 @@ function editSection(k) {
   $("turn").value = m.turn || "";
   $("name").value = m.name || "";
   $("type").value = m.type || "corner";
-  $("gear").value = m.gear || "";
   $("severity").value = m.severity || "";
   $("overtake").value = m.overtake || "";
   $("members").value = (m.members || []).join(", ");
@@ -744,7 +734,7 @@ function submitSection() {
   } else if (m.type === "chicane" || m.type === "complex") {
     if (!m.name) return invalid("name", "Name this " + m.type);
     // A complex is defined by the corners it groups; a chicane may list them
-    // (to carry per-corner gear) but a bare named chicane is fine.
+    // but a bare named chicane (e.g. "Bus Stop") is fine.
     if (m.type === "complex" && !m.members.length)
       return invalid("members", "List the turns this complex groups");
   } else {   // straight, other
@@ -782,7 +772,7 @@ function normSection(s) {
     type: s.type || "other",
     start_m: Math.round(s.start_m), end_m: Math.round(s.end_m),
     apex_m: s.apex_m != null ? Math.round(s.apex_m) : null,
-    gear: s.gear || null, severity: s.severity || "", overtake: s.overtake || "",
+    severity: s.severity || "", overtake: s.overtake || "",
     members: Array.isArray(s.members) ? s.members.map(String) : [],
   };
 }
@@ -887,7 +877,6 @@ function cleanSection(m) {
   if (m.name) o.name = m.name;
   o.type = m.type; o.start_m = m.start_m; o.end_m = m.end_m;
   if (m.apex_m != null) o.apex_m = m.apex_m;
-  if (m.gear) o.gear = m.gear;
   if (m.severity) o.severity = m.severity;
   if (m.overtake) o.overtake = m.overtake;
   if (m.type === "complex" && (m.members || []).length) o.members = m.members.slice();
