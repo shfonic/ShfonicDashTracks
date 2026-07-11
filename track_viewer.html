@@ -65,10 +65,6 @@
     background: rgba(10,13,18,.7); border: 1px solid var(--line);
     border-radius: 5px; padding: 6px 9px; font-variant-numeric: tabular-nums;
     pointer-events: none; }
-  /* TEMP: copy the interaction trace out for debugging (remove with the log). */
-  #logbtn { position: fixed; right: 10px; bottom: 10px; z-index: 99999;
-    font: 12px var(--mono); color: #1a1300; background: #ffb300;
-    border: none; border-radius: 6px; padding: 9px 13px; opacity: .9; }
   .empty { position: absolute; inset: 0; display: flex; align-items: center;
     justify-content: center; }
   .empty[hidden] { display: none; }   /* beat the flex display when a track loads */
@@ -231,7 +227,6 @@
       </button>
     </div>
     <div class="hud" id="hud" hidden></div>
-    <button id="logbtn" type="button">Copy log</button>
     <div class="empty" id="empty">
       <div class="card">
         <h2>Open a recorded track</h2>
@@ -951,13 +946,8 @@ window.SHFONIC = {
   isDirty:   ()  => _dirty,
   markSaved: ()  => { _dirty = false; },   // host wrote the file — no longer dirty
   embed:     ()  => document.body.classList.add("embedded"),  // hide open/save controls
-  dumpLog:   ()  => _log.join("\n"),       // TEMP: interaction trace for debugging
+  dumpLog:   ()  => _log.join("\n"),       // TEMP: interaction trace, pulled by the host's Log button
 };
-$("logbtn").addEventListener("click", async () => {
-  const txt = _log.join("\n");
-  try { await navigator.clipboard.writeText(txt); flash("Log copied — paste it to me"); }
-  catch { flash("Copy blocked"); }
-});
 $("copy").addEventListener("click", async () => {
   const json = JSON.stringify(exportObj(), null, 2);
   try { await navigator.clipboard.writeText(json); flash("Sections JSON copied"); }
