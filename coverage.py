@@ -56,7 +56,7 @@ def table():
         classes = r["classes"]
         classes_cell = ", ".join(classes) or "—"
         if classes:
-            sections_cell = "<br>".join(f"{c}: {r['sections'] or '—'}" for c in classes)
+            sections_cell = str(r['sections'] or "—")   # shared across classes — show once
             gears_cell = "<br>".join(f"{c}: {_yn(r['gears_by_class'][c])}" for c in classes)
         else:
             sections_cell = "—"

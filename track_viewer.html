@@ -854,11 +854,23 @@ $("clsNotes").addEventListener("input", e => {
 // pointerdown, fired on its pointerup (touch gets implicit pointer capture, so
 // the pointerup lands on the same element even if the finger drifts). Mouse
 // fires pointer events too, so desktop is unaffected.
+//
+// A tap must NOT fire when the finger is scrolling: touch gets implicit pointer
+// capture, so a drag that starts on a list row keeps sending pointermove +
+// pointerup to that row even as the page scrolls — without a movement guard the
+// pointerup reads as a tap (this made the sections list open+auto-scroll a row
+// mid-scroll, so you could never reach the last one). So disarm once the finger
+// travels past a small threshold; a genuine tap barely moves.
 function onTap(el, fn) {
   if (!el) return;
-  let armed = false;
-  el.addEventListener("pointerdown", () => { armed = true; });
+  const MOVE = 10;                 // px of travel that counts as a scroll, not a tap
+  let armed = false, sx = 0, sy = 0;
+  el.addEventListener("pointerdown", e => { armed = true; sx = e.clientX; sy = e.clientY; });
   el.addEventListener("pointercancel", () => { armed = false; });
+  el.addEventListener("pointermove", e => {
+    if (armed && (Math.abs(e.clientX - sx) > MOVE || Math.abs(e.clientY - sy) > MOVE))
+      armed = false;               // finger travelled — it's a scroll, cancel the tap
+  });
   el.addEventListener("pointerup", e => { if (armed) { armed = false; fn(e); } });
 }
 $("scrub").addEventListener("input", e => { cursor = +e.target.value; updateDist(); });

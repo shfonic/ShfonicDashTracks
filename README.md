@@ -17,23 +17,25 @@ Which tracks exist and what's filled in. `—` = not done yet — **contribution
 <!-- COVERAGE:START -->
 | Game | Track | Class lines | Pit | Sections | Gears | Notes |
 |---|---|---|:--:|:--:|:--:|---|
-| f1_25 | Abu Dhabi | formula1 | ✅ | formula1: 17 | formula1: — |  |
-| f1_25 | Hungaroring | formula1 | ✅ | formula1: 15 | formula1: — |  |
-| f1_25 | Imola | formula1 | ✅ | formula1: 19 | formula1: — |  |
-| f1_25 | Madrid | formula1 | ✅ | formula1: 26 | formula1: — |  |
-| f1_25 | Melbourne | formula1 | ✅ | formula1: 17 | formula1: — |  |
-| f1_25 | Red Bull Ring | formula1 | ✅ | formula1: — | formula1: — |  |
-| f1_25 | Shanghai | formula1 | ✅ | formula1: — | formula1: — |  |
-| f1_25 | Silverstone | formula1 | ✅ | formula1: 23 | formula1: — |  |
-| f1_25 | Spa | formula1 | ✅ | formula1: 22 | formula1: — |  |
+| f1_25 | Abu Dhabi | f2, formula1, formula1_2026 | ✅ | 17 | f2: —<br>formula1: —<br>formula1_2026: — |  |
+| f1_25 | Hungaroring | f2, formula1, formula1_2026 | ✅ | 15 | f2: —<br>formula1: —<br>formula1_2026: — |  |
+| f1_25 | Imola | f2, formula1, formula1_2026 | ✅ | 19 | f2: —<br>formula1: —<br>formula1_2026: — |  |
+| f1_25 | Madrid | f2, formula1, formula1_2026 | ✅ | 26 | f2: —<br>formula1: —<br>formula1_2026: — |  |
+| f1_25 | Melbourne | f2, formula1, formula1_2026 | ✅ | 17 | f2: —<br>formula1: —<br>formula1_2026: — |  |
+| f1_25 | Red Bull Ring | f2, formula1, formula1_2026 | ✅ | — | f2: —<br>formula1: —<br>formula1_2026: — |  |
+| f1_25 | Shanghai | f2, formula1, formula1_2026 | ✅ | — | f2: —<br>formula1: —<br>formula1_2026: — |  |
+| f1_25 | Silverstone | f2, formula1, formula1_2026 | ✅ | 23 | f2: —<br>formula1: —<br>formula1_2026: — |  |
+| f1_25 | Spa | f2, formula1, formula1_2026 | ✅ | 22 | f2: —<br>formula1: —<br>formula1_2026: — |  |
 <!-- COVERAGE:END -->
 
 Circuit geometry (edges, pit, sectors, corner labels) is **shared across car classes**;
-only the racing line can differ, held per class in a `lines` map. In the **F1 titles
-every open-wheel class shares one line** — F1 and F2 differ by under a metre (recording
-noise), so they collapse to a single `formula1` entry rather than duplicating a profile
-per class. Games with genuine class variety (e.g. GT3 vs a road car) keep a distinct
-line per class. A track just needs *one* class line to be useful — the rest can follow.
+the racing line **and its gears** are held per class in a `lines` map. In the **F1 titles
+the lines are near-identical** — F1 and F2 differ by under a metre (recording noise) — but
+the **gears differ** (the 2026 cars super-clip to a lower gear at some corners to recharge
+the battery), so each class (`formula1`, `formula1_2026`, `f2`) is its **own profile**:
+the line copied across, the gears filled in per class. Games with genuine class variety
+(e.g. GT3 vs a road car) get a genuinely distinct line per class too. A track just needs
+*one* class profile to be useful — the rest can follow.
 
 > **Position feed:** recording needs world-position telemetry, which today only
 > **F1 25 / F1 26** broadcast, so tracks are F1 for now. Other games slot in as their
