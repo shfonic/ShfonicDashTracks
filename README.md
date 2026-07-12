@@ -22,8 +22,8 @@ Which tracks exist and what's filled in. `—` = not done yet — **contribution
 | f1_25 | Imola | f2, formula1, formula1_2026 | ✅ | 19 | f2: —<br>formula1: —<br>formula1_2026: — |  |
 | f1_25 | Madrid | f2, formula1, formula1_2026 | ✅ | 26 | f2: —<br>formula1: —<br>formula1_2026: — |  |
 | f1_25 | Melbourne | f2, formula1, formula1_2026 | ✅ | 17 | f2: —<br>formula1: —<br>formula1_2026: — |  |
-| f1_25 | Red Bull Ring | f2, formula1, formula1_2026 | ✅ | — | f2: —<br>formula1: —<br>formula1_2026: — |  |
-| f1_25 | Shanghai | f2, formula1, formula1_2026 | ✅ | — | f2: —<br>formula1: —<br>formula1_2026: — |  |
+| f1_25 | Red Bull Ring | f2, formula1, formula1_2026 | ✅ | 13 | f2: —<br>formula1: —<br>formula1_2026: — |  |
+| f1_25 | Shanghai | f2, formula1, formula1_2026 | ✅ | 18 | f2: —<br>formula1: —<br>formula1_2026: — |  |
 | f1_25 | Silverstone | f2, formula1, formula1_2026 | ✅ | 23 | f2: —<br>formula1: —<br>formula1_2026: — |  |
 | f1_25 | Spa | f2, formula1, formula1_2026 | ✅ | 22 | f2: —<br>formula1: —<br>formula1_2026: — |  |
 <!-- COVERAGE:END -->
