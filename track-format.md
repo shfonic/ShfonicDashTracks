@@ -37,7 +37,7 @@ present. A track is useful with just one.
 
 ```jsonc
 "lines": {
-  "formula1_2026": {
+  "formula1": {
     "racing_line": [[x, z], …],   // the driven line, ~400 points, averaged over several laps
     "racing_attempts": 3,          // how many laps it was averaged from
     "gears": null,                 // suggested gear per line point — hand-filled, NOT recorded; null until set
