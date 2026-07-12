@@ -17,15 +17,15 @@ Which tracks exist and what's filled in. `—` = not done yet — **contribution
 <!-- COVERAGE:START -->
 | Game | Track | Class lines | Pit | Sections | Gears | Notes |
 |---|---|---|:--:|:--:|:--:|---|
-| f1_25 | Abu Dhabi | formula1 | ✅ | 17 | — |  |
-| f1_25 | Hungaroring | formula1 | ✅ | 15 | — |  |
-| f1_25 | Imola | formula1 | ✅ | 19 | — |  |
-| f1_25 | Madrid | formula1 | ✅ | 26 | — |  |
-| f1_25 | Melbourne | formula1 | ✅ | 17 | — |  |
-| f1_25 | Red Bull Ring | formula1 | ✅ | — | — |  |
-| f1_25 | Shanghai | formula1 | ✅ | — | — |  |
-| f1_25 | Silverstone | formula1 | ✅ | 23 | — |  |
-| f1_25 | Spa | formula1 | ✅ | 22 | — |  |
+| f1_25 | Abu Dhabi | formula1 | ✅ | formula1: 17 | formula1: — |  |
+| f1_25 | Hungaroring | formula1 | ✅ | formula1: 15 | formula1: — |  |
+| f1_25 | Imola | formula1 | ✅ | formula1: 19 | formula1: — |  |
+| f1_25 | Madrid | formula1 | ✅ | formula1: 26 | formula1: — |  |
+| f1_25 | Melbourne | formula1 | ✅ | formula1: 17 | formula1: — |  |
+| f1_25 | Red Bull Ring | formula1 | ✅ | formula1: — | formula1: — |  |
+| f1_25 | Shanghai | formula1 | ✅ | formula1: — | formula1: — |  |
+| f1_25 | Silverstone | formula1 | ✅ | formula1: 23 | formula1: — |  |
+| f1_25 | Spa | formula1 | ✅ | formula1: 22 | formula1: — |  |
 <!-- COVERAGE:END -->
 
 Circuit geometry (edges, pit, sectors, corner labels) is **shared across car classes**;

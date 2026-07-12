@@ -32,15 +32,17 @@ def rows():
             lines = ({d.get("car_class") or "default": {"racing_line": d.get("racing_line") or [],
                                                         "gears": None}}
                      if d.get("racing_line") else {})
-        classes = ", ".join(sorted(lines)) or "—"
-        gears = any(l.get("gears") for l in lines.values())
+        classes = sorted(lines)
+        # sections is shared/car-agnostic (see track-format.md), so every class
+        # sees the same count; gears is per class, so it's looked up per class.
+        sections = len(d.get("sections") or [])
         out.append({
             "game": d.get("game", "?"),
             "track": d.get("track", os.path.basename(path)),
             "classes": classes,
             "pit": bool(d.get("pit_lane")),
-            "sections": len(d.get("sections") or []),
-            "gears": gears,
+            "sections": sections,
+            "gears_by_class": {c: bool(lines[c].get("gears")) for c in classes},
             "notes": (d.get("notes") or "").strip(),
         })
     out.sort(key=lambda r: (r["game"], r["track"].lower()))
@@ -51,8 +53,16 @@ def table():
     lines = ["| Game | Track | Class lines | Pit | Sections | Gears | Notes |",
              "|---|---|---|:--:|:--:|:--:|---|"]
     for r in rows():
-        lines.append(f"| {r['game']} | {r['track']} | {r['classes']} | "
-                     f"{_yn(r['pit'])} | {r['sections'] or '—'} | {_yn(r['gears'])} | "
+        classes = r["classes"]
+        classes_cell = ", ".join(classes) or "—"
+        if classes:
+            sections_cell = "<br>".join(f"{c}: {r['sections'] or '—'}" for c in classes)
+            gears_cell = "<br>".join(f"{c}: {_yn(r['gears_by_class'][c])}" for c in classes)
+        else:
+            sections_cell = "—"
+            gears_cell = "—"
+        lines.append(f"| {r['game']} | {r['track']} | {classes_cell} | "
+                     f"{_yn(r['pit'])} | {sections_cell} | {gears_cell} | "
                      f"{r['notes'] or ''} |")
     return "\n".join(lines)
 
