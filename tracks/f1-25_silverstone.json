@@ -4,6 +4,9 @@
   "track": "Silverstone",
   "game_track_length_m": 5890.5,
   "notes": "",
+  "created": "2026-07-10T14:25:53Z",
+  "updated": "2026-07-12T00:09:26Z",
+  "author": "Richard Hawes",
   "left_edge": [
     [
       -459.83,
@@ -3295,188 +3298,6 @@
       "lap_dist_m": 4294.3
     }
   ],
-  "sections": [
-    {
-      "turn": "1",
-      "name": "Abbey",
-      "type": "corner",
-      "start_m": 351,
-      "end_m": 531,
-      "apex_m": 429
-    },
-    {
-      "turn": "2",
-      "name": "Farm",
-      "type": "corner",
-      "start_m": 561,
-      "end_m": 723,
-      "apex_m": 633
-    },
-    {
-      "turn": "3",
-      "name": "Village",
-      "type": "corner",
-      "start_m": 840,
-      "end_m": 974,
-      "apex_m": 917
-    },
-    {
-      "turn": "4",
-      "name": "The Loop",
-      "type": "corner",
-      "start_m": 1004,
-      "end_m": 1122,
-      "apex_m": 1063
-    },
-    {
-      "turn": "5",
-      "name": "Aintree",
-      "type": "corner",
-      "start_m": 1166,
-      "end_m": 1358,
-      "apex_m": 1265
-    },
-    {
-      "name": "Wellington Straight",
-      "type": "straight",
-      "start_m": 1329,
-      "end_m": 1890
-    },
-    {
-      "turn": "6",
-      "name": "Brooklands",
-      "type": "corner",
-      "start_m": 1860,
-      "end_m": 2082,
-      "apex_m": 2023
-    },
-    {
-      "turn": "7",
-      "name": "Luffield",
-      "type": "corner",
-      "start_m": 2096,
-      "end_m": 2333,
-      "apex_m": 2132
-    },
-    {
-      "name": "Old Pit Straight",
-      "type": "straight",
-      "start_m": 2303,
-      "end_m": 3012
-    },
-    {
-      "turn": "8",
-      "name": "Woodcote",
-      "type": "corner",
-      "start_m": 2392,
-      "end_m": 2731
-    },
-    {
-      "turn": "9",
-      "name": "Copse",
-      "type": "corner",
-      "start_m": 2997,
-      "end_m": 3233,
-      "apex_m": 3106
-    },
-    {
-      "turn": "10",
-      "name": "Maggots",
-      "type": "corner",
-      "start_m": 3528,
-      "end_m": 3691,
-      "apex_m": 3647
-    },
-    {
-      "name": "Maggots and Becketts and Chapel",
-      "type": "complex",
-      "start_m": 3528,
-      "end_m": 4296,
-      "members": [
-        "10",
-        "11",
-        "12",
-        "13",
-        "14"
-      ]
-    },
-    {
-      "turn": "11",
-      "name": "Becketts",
-      "type": "corner",
-      "start_m": 3691,
-      "end_m": 3809,
-      "apex_m": 3741
-    },
-    {
-      "turn": "12",
-      "name": "Becketts II",
-      "type": "corner",
-      "start_m": 3809,
-      "end_m": 3971,
-      "apex_m": 3908
-    },
-    {
-      "turn": "13",
-      "name": "Becketts III",
-      "type": "corner",
-      "start_m": 3971,
-      "end_m": 4148,
-      "apex_m": 4036
-    },
-    {
-      "turn": "14",
-      "name": "Chapel",
-      "type": "corner",
-      "start_m": 4148,
-      "end_m": 4296,
-      "apex_m": 4208
-    },
-    {
-      "name": "Hangar Straight",
-      "type": "straight",
-      "start_m": 4296,
-      "end_m": 4975
-    },
-    {
-      "turn": "15",
-      "name": "Stowe",
-      "type": "corner",
-      "start_m": 4931,
-      "end_m": 5211,
-      "apex_m": 5076
-    },
-    {
-      "turn": "16",
-      "name": "Vale",
-      "type": "corner",
-      "start_m": 5485,
-      "end_m": 5580,
-      "apex_m": 5541
-    },
-    {
-      "turn": "17",
-      "type": "corner",
-      "start_m": 5580,
-      "end_m": 5674,
-      "apex_m": 5610
-    },
-    {
-      "turn": "18",
-      "name": "Club Corner",
-      "type": "corner",
-      "start_m": 5699,
-      "end_m": 5861,
-      "apex_m": 5793
-    },
-    {
-      "name": "Hamilton Straight",
-      "type": "straight",
-      "start_m": 5831,
-      "end_m": 399
-    }
-  ],
-  "markers": [],
   "lines": {
     "formula1": {
       "racing_line": [
@@ -5085,5 +4906,186 @@
       "gears": null,
       "notes": ""
     }
-  }
+  },
+  "sections": [
+    {
+      "turn": "1",
+      "name": "Abbey",
+      "type": "corner",
+      "start_m": 351,
+      "end_m": 531,
+      "apex_m": 429
+    },
+    {
+      "turn": "2",
+      "name": "Farm",
+      "type": "corner",
+      "start_m": 561,
+      "end_m": 723,
+      "apex_m": 633
+    },
+    {
+      "turn": "3",
+      "name": "Village",
+      "type": "corner",
+      "start_m": 840,
+      "end_m": 974,
+      "apex_m": 917
+    },
+    {
+      "turn": "4",
+      "name": "The Loop",
+      "type": "corner",
+      "start_m": 1004,
+      "end_m": 1122,
+      "apex_m": 1063
+    },
+    {
+      "turn": "5",
+      "name": "Aintree",
+      "type": "corner",
+      "start_m": 1166,
+      "end_m": 1358,
+      "apex_m": 1265
+    },
+    {
+      "name": "Wellington Straight",
+      "type": "straight",
+      "start_m": 1329,
+      "end_m": 1890
+    },
+    {
+      "turn": "6",
+      "name": "Brooklands",
+      "type": "corner",
+      "start_m": 1860,
+      "end_m": 2082,
+      "apex_m": 2023
+    },
+    {
+      "turn": "7",
+      "name": "Luffield",
+      "type": "corner",
+      "start_m": 2096,
+      "end_m": 2333,
+      "apex_m": 2132
+    },
+    {
+      "name": "Old Pit Straight",
+      "type": "straight",
+      "start_m": 2303,
+      "end_m": 3012
+    },
+    {
+      "turn": "8",
+      "name": "Woodcote",
+      "type": "corner",
+      "start_m": 2392,
+      "end_m": 2731
+    },
+    {
+      "turn": "9",
+      "name": "Copse",
+      "type": "corner",
+      "start_m": 2997,
+      "end_m": 3233,
+      "apex_m": 3106
+    },
+    {
+      "turn": "10",
+      "name": "Maggots",
+      "type": "corner",
+      "start_m": 3528,
+      "end_m": 3691,
+      "apex_m": 3647
+    },
+    {
+      "name": "Maggots and Becketts and Chapel",
+      "type": "complex",
+      "start_m": 3528,
+      "end_m": 4296,
+      "members": [
+        "10",
+        "11",
+        "12",
+        "13",
+        "14"
+      ]
+    },
+    {
+      "turn": "11",
+      "name": "Becketts",
+      "type": "corner",
+      "start_m": 3691,
+      "end_m": 3809,
+      "apex_m": 3741
+    },
+    {
+      "turn": "12",
+      "name": "Becketts II",
+      "type": "corner",
+      "start_m": 3809,
+      "end_m": 3971,
+      "apex_m": 3908
+    },
+    {
+      "turn": "13",
+      "name": "Becketts III",
+      "type": "corner",
+      "start_m": 3971,
+      "end_m": 4148,
+      "apex_m": 4036
+    },
+    {
+      "turn": "14",
+      "name": "Chapel",
+      "type": "corner",
+      "start_m": 4148,
+      "end_m": 4296,
+      "apex_m": 4208
+    },
+    {
+      "name": "Hangar Straight",
+      "type": "straight",
+      "start_m": 4296,
+      "end_m": 4975
+    },
+    {
+      "turn": "15",
+      "name": "Stowe",
+      "type": "corner",
+      "start_m": 4931,
+      "end_m": 5211,
+      "apex_m": 5076
+    },
+    {
+      "turn": "16",
+      "name": "Vale",
+      "type": "corner",
+      "start_m": 5485,
+      "end_m": 5580,
+      "apex_m": 5541
+    },
+    {
+      "turn": "17",
+      "type": "corner",
+      "start_m": 5580,
+      "end_m": 5674,
+      "apex_m": 5610
+    },
+    {
+      "turn": "18",
+      "name": "Club Corner",
+      "type": "corner",
+      "start_m": 5699,
+      "end_m": 5861,
+      "apex_m": 5793
+    },
+    {
+      "name": "Hamilton Straight",
+      "type": "straight",
+      "start_m": 5831,
+      "end_m": 399
+    }
+  ]
 }

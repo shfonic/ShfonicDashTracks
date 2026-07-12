@@ -22,6 +22,8 @@ Which tracks exist and what's filled in. `—` = not done yet — **contribution
 | f1_25 | Imola | formula1 | ✅ | 19 | — |  |
 | f1_25 | Madrid | formula1 | ✅ | 26 | — |  |
 | f1_25 | Melbourne | formula1 | ✅ | 17 | — |  |
+| f1_25 | Red Bull Ring | formula1 | ✅ | — | — |  |
+| f1_25 | Shanghai | formula1 | ✅ | — | — |  |
 | f1_25 | Silverstone | formula1 | ✅ | 23 | — |  |
 | f1_25 | Spa | formula1 | ✅ | 22 | — |  |
 <!-- COVERAGE:END -->
