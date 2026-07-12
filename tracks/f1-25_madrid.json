@@ -3275,7 +3275,7 @@
     }
   ],
   "lines": {
-    "formula1_2026": {
+    "formula1": {
       "racing_line": [
         [
           390.86,
@@ -4926,7 +4926,7 @@
       "end_m": 1641
     },
     {
-      "name": "Subida de las Cárcavas",
+      "name": "Subida de las C\u00e1rcavas",
       "type": "complex",
       "start_m": 1573,
       "end_m": 1722,
@@ -4943,7 +4943,7 @@
     },
     {
       "turn": "8",
-      "name": "El Búnker",
+      "name": "El B\u00fanker",
       "type": "corner",
       "start_m": 1872,
       "end_m": 1953,
