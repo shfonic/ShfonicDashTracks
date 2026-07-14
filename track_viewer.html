@@ -449,6 +449,28 @@ function sectionLabel(m) { return m.name || (m.turn ? "T" + m.turn : (m.type || 
 function pathFrom(pts) {
   return pts.map((p,i) => `${i?'L':'M'}${sx(p[0]).toFixed(1)},${sy(p[1]).toFixed(1)}`).join(" ");
 }
+// A smooth path through the points — a Catmull-Rom spline emitted as cubic
+// béziers — so the drawn lines read as smooth curves when you zoom in rather
+// than the straight-segment facets of the ~15 m station spacing. `closed` wraps
+// the ends (full-lap loops: edges, racing line); open paths (pit, section arcs)
+// clamp their end tangents. Only the *stroke* is smoothed — markers and the
+// cursor still ride the raw vertices via posAtDistance, so placement is exact.
+function smoothPath(pts, closed) {
+  const n = pts.length;
+  if (n < 3) return pathFrom(pts);
+  const X = pts.map(p => sx(p[0])), Y = pts.map(p => sy(p[1]));
+  const at = i => closed ? ((i % n) + n) % n : Math.max(0, Math.min(n - 1, i));
+  let d = `M${X[0].toFixed(1)},${Y[0].toFixed(1)}`;
+  const last = closed ? n : n - 1;
+  for (let i = 0; i < last; i++) {
+    const i0 = at(i - 1), i1 = at(i), i2 = at(i + 1), i3 = at(i + 2);
+    const c1x = X[i1] + (X[i2] - X[i0]) / 6, c1y = Y[i1] + (Y[i2] - Y[i0]) / 6;
+    const c2x = X[i2] - (X[i3] - X[i1]) / 6, c2y = Y[i2] - (Y[i3] - Y[i1]) / 6;
+    d += `C${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ` +
+         `${X[i2].toFixed(1)},${Y[i2].toFixed(1)}`;
+  }
+  return d + (closed ? "Z" : "");
+}
 function cssv(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
 
 // Sector boundaries -> [0, b1, b2, ... , total]; regions numbered in driving order.
@@ -517,19 +539,19 @@ function render() {
 
   if (vis.surface && t.left_edge.length && t.right_edge.length) {
     const ring = [...t.left_edge, ...[...t.right_edge].reverse()];
-    add("path", { d: pathFrom(ring) + " Z", fill: cssv("--surface"), stroke: "none" });
+    add("path", { d: smoothPath(ring, true), fill: cssv("--surface"), stroke: "none" });
   }
-  if (vis.left)  add("path", { d: pathFrom(t.left_edge),  fill:"none", stroke: cssv("--left"),  "stroke-width": 2*s });
-  if (vis.right) add("path", { d: pathFrom(t.right_edge), fill:"none", stroke: cssv("--right"), "stroke-width": 2*s });
-  if (vis.race)  add("path", { d: pathFrom(t.racing_line),fill:"none", stroke: cssv("--race"),  "stroke-width": 2.5*s, "stroke-opacity": .95 });
+  if (vis.left)  add("path", { d: smoothPath(t.left_edge, true),  fill:"none", stroke: cssv("--left"),  "stroke-width": 2*s });
+  if (vis.right) add("path", { d: smoothPath(t.right_edge, true), fill:"none", stroke: cssv("--right"), "stroke-width": 2*s });
+  if (vis.race)  add("path", { d: smoothPath(t.racing_line, true),fill:"none", stroke: cssv("--race"),  "stroke-width": 2.5*s, "stroke-opacity": .95 });
   if (vis.pit && t.pit_lane.length)
-    add("path", { d: pathFrom(t.pit_lane), fill:"none", stroke: cssv("--pit"), "stroke-width": 3*s, "stroke-dasharray": `${6*s} ${4*s}` });
+    add("path", { d: smoothPath(t.pit_lane, false), fill:"none", stroke: cssv("--pit"), "stroke-width": 3*s, "stroke-dasharray": `${6*s} ${4*s}` });
 
   if (vis.labels) sections.forEach((m, k) => {
     const seg = spanPoints(t.racing_line, m.start_m, m.end_m, tot);
     const col = LABEL_COLORS[k % LABEL_COLORS.length];
     const editing = (k === editIndex);
-    add("path", { d: pathFrom(seg), fill:"none", stroke: col,
+    add("path", { d: smoothPath(seg, false), fill:"none", stroke: col,
       "stroke-width": (editing ? 9 : 6)*s,
       "stroke-opacity": editing ? .7 : .45, "stroke-linecap": "round" });
     const mid = posAtDistance(t.racing_line, spanMid(m.start_m, m.end_m, tot), tot);

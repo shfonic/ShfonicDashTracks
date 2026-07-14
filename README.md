@@ -81,6 +81,15 @@ exposes a small `window.SHFONIC` bridge (`load` / `export` / `filename` / `isDir
 native WebView drives instead of the file picker and download button. This has no effect
 when you just open the file in a browser — it still loads and downloads as normal.
 
+**`session_viewer.html`** is the read-only companion tool: it overlays a driven session's
+laps on the racing line so you can see where you ran wide, toggle individual laps on and
+off, and **tap the map to zoom into a corner** (double-tap to fit). It reuses the editor's
+projection, pan/zoom and theme. The companion bakes a session's data in via the same
+`window.SHFONIC` bridge (`SHFONIC.load(data)`, where `data` is
+`sessionlog.lines.session_line_export(...)`); opened directly in a browser it instead takes
+a track JSON + a session CSV via the two file buttons, so you can inspect a session pulled
+off the Pi. Both HTML tools are vendored into the companion by `sync_tracks_editor.py`.
+
 ## Contributing
 
 Record a track in Shfonic Dash, then open a PR adding the `.json`. CI runs `validate.py`
