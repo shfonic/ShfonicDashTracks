@@ -13,8 +13,29 @@
     --left: #5a96f5; --right: #f5963f; --race: #58d980;
     --sf: #ffffff; --sector: #e6cf46; --surface: rgba(120,140,170,0.10);
     --pit: #c678dd;
+    /* Translucent panel behind the on-map hint (.hud) — flips per theme so the
+       hint stays legible over a light *or* dark map. */
+    --hud-bg: rgba(10,13,18,0.72);
     --mono: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Consolas, monospace;
     --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    /* UI font scale — the host sets this from the app's Small/Medium/Large
+       setting via SHFONIC.setTheme(); every chrome font-size is calc()'d by it.
+       The SVG map labels are drawn in JS and are intentionally not scaled. */
+    --fscale: 1;
+  }
+  /* Light appearance — driven by data-theme="light" on <html>, set by the host
+     from the app's Dark/Light setting. Colours only; the map reads these vars
+     live (see cssv()), so the map re-tints on the next render(). Map-feature
+     hues are deepened so they read on the light surfaces, and the start/finish
+     line flips from white to a dark line so it stays visible. */
+  :root[data-theme="light"] {
+    --bg: #f4f6f9; --panel: #ffffff; --panel2: #eceff4; --line: #d6dbe2;
+    --line2: #c2cad4; --text: #171c23; --muted: #566171; --dim: #8a92a0;
+    --accent: #b07800;
+    --left: #2e6fd4; --right: #cf6a17; --race: #2f9e57;
+    --sf: #3a4048; --sector: #9a8500; --surface: rgba(40,70,110,0.08);
+    --pit: #9a4fb5;
+    --hud-bg: rgba(255,255,255,0.9);
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; }
@@ -34,19 +55,19 @@
   .brand { display: flex; align-items: center; gap: 10px; }
   .brand .mark { display: block; }
   .brand .lock { display: flex; flex-direction: column; line-height: 1.2; }
-  .brand .wm { font-family: var(--mono); font-size: 13px; letter-spacing: .24em;
+  .brand .wm { font-family: var(--mono); font-size: calc(13px * var(--fscale)); letter-spacing: .24em;
     font-weight: 700; color: var(--text); }
   .brand .wm b { color: var(--accent); font-weight: 700; }
-  .brand .sub { font-family: var(--mono); font-size: 9px; letter-spacing: .18em;
+  .brand .sub { font-family: var(--mono); font-size: calc(9px * var(--fscale)); letter-spacing: .18em;
     text-transform: uppercase; color: var(--dim); }
   .track-id { display: flex; align-items: baseline; gap: 9px; padding-left: 16px;
     border-left: 1px solid var(--line2); }
-  .track-id .tlabel { font-family: var(--mono); font-size: 10px; letter-spacing: .16em;
+  .track-id .tlabel { font-family: var(--mono); font-size: calc(10px * var(--fscale)); letter-spacing: .16em;
     color: var(--dim); }
-  .track-id .t { font-family: var(--mono); font-size: 15px; letter-spacing: .05em;
+  .track-id .t { font-family: var(--mono); font-size: calc(15px * var(--fscale)); letter-spacing: .05em;
     color: var(--accent); font-weight: 600; text-transform: uppercase; }
   .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
-  .chip { font-family: var(--mono); font-size: 11px; letter-spacing: .06em;
+  .chip { font-family: var(--mono); font-size: calc(11px * var(--fscale)); letter-spacing: .06em;
     color: var(--muted); background: var(--panel2); border: 1px solid var(--line);
     padding: 4px 9px; border-radius: 5px; font-variant-numeric: tabular-nums; }
   .chip b { color: var(--text); font-weight: 600; }
@@ -55,42 +76,42 @@
   svg.grabbing { cursor: grabbing; }
   .mapctl { position: absolute; top: 12px; right: 12px; display: flex;
     flex-direction: column; gap: 6px; }
-  .mapctl button { width: 34px; height: 34px; padding: 0; font-size: 19px; line-height: 1;
+  .mapctl button { width: 34px; height: 34px; padding: 0; font-size: calc(19px * var(--fscale)); line-height: 1;
     display: flex; align-items: center; justify-content: center;
     background: rgba(16,21,29,.88); border: 1px solid var(--line2); color: var(--text);
     border-radius: 7px; cursor: pointer; }
   .mapctl button:hover { border-color: var(--accent); color: var(--accent); }
   .hud { position: absolute; left: 14px; bottom: 12px; max-width: calc(100% - 28px);
-    font-family: var(--mono); font-size: 11px; color: var(--muted);
-    background: rgba(10,13,18,.7); border: 1px solid var(--line);
+    font-family: var(--mono); font-size: calc(11px * var(--fscale)); color: var(--muted);
+    background: var(--hud-bg); border: 1px solid var(--line);
     border-radius: 5px; padding: 6px 9px; font-variant-numeric: tabular-nums;
     pointer-events: none; }
   .empty { position: absolute; inset: 0; display: flex; align-items: center;
     justify-content: center; }
   .empty[hidden] { display: none; }   /* beat the flex display when a track loads */
   .empty .card { text-align: center; max-width: 340px; }
-  .empty h2 { font-family: var(--mono); font-size: 14px; letter-spacing: .14em;
+  .empty h2 { font-family: var(--mono); font-size: calc(14px * var(--fscale)); letter-spacing: .14em;
     text-transform: uppercase; color: var(--text); margin: 0 0 8px; }
-  .empty p { color: var(--muted); font-size: 13px; line-height: 1.6; margin: 0 0 18px; }
+  .empty p { color: var(--muted); font-size: calc(13px * var(--fscale)); line-height: 1.6; margin: 0 0 18px; }
   aside { background: var(--panel); padding: 16px; overflow-y: auto; display: flex;
     flex-direction: column; gap: 20px; }
-  .grp-title { font-family: var(--mono); font-size: 11px; letter-spacing: .14em;
+  .grp-title { font-family: var(--mono); font-size: calc(11px * var(--fscale)); letter-spacing: .14em;
     text-transform: uppercase; color: var(--dim); margin: 0 0 10px; }
   .layers { display: flex; flex-direction: column; gap: 7px; }
-  .layer { display: flex; align-items: center; gap: 9px; font-size: 13px;
+  .layer { display: flex; align-items: center; gap: 9px; font-size: calc(13px * var(--fscale));
     cursor: pointer; user-select: none; }
   .layer input { accent-color: var(--accent); width: 15px; height: 15px; }
   .sw { width: 14px; height: 3px; border-radius: 2px; flex: none; }
   .field { display: flex; flex-direction: column; gap: 6px; }
-  label.lab { font-family: var(--mono); font-size: 10px; letter-spacing: .1em;
+  label.lab { font-family: var(--mono); font-size: calc(10px * var(--fscale)); letter-spacing: .1em;
     text-transform: uppercase; color: var(--dim); }
   input[type=range] { width: 100%; accent-color: var(--accent); }
   .dist-row { display: flex; align-items: center; gap: 8px; font-family: var(--mono);
     font-variant-numeric: tabular-nums; }
-  .dist-row .big { font-size: 22px; color: var(--accent); font-weight: 600; }
-  .dist-row .u { font-size: 12px; color: var(--muted); }
+  .dist-row .big { font-size: calc(22px * var(--fscale)); color: var(--accent); font-weight: 600; }
+  .dist-row .u { font-size: calc(12px * var(--fscale)); color: var(--muted); }
   .dist-row .nudge { margin-left: auto; display: flex; gap: 5px; }
-  .dist-row .nudge button { width: 32px; height: 28px; padding: 0; font-size: 16px;
+  .dist-row .nudge button { width: 32px; height: 28px; padding: 0; font-size: calc(16px * var(--fscale));
     line-height: 1; display: flex; align-items: center; justify-content: center; }
   .btns { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   button { font-family: var(--sans); font-size: 12.5px; color: var(--text);
@@ -103,7 +124,7 @@
   button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .row { display: flex; gap: 8px; }
   .row > * { min-width: 0; }
-  input[type=text], select, textarea { font-family: var(--sans); font-size: 13px;
+  input[type=text], select, textarea { font-family: var(--sans); font-size: calc(13px * var(--fscale));
     background: var(--panel2); color: var(--text); border: 1px solid var(--line2);
     border-radius: 6px; padding: 7px 9px; width: 100%; }
   textarea { resize: vertical; line-height: 1.4; }
@@ -115,21 +136,21 @@
     gap: 6px; }
   .mk { display: flex; flex-direction: column; align-items: stretch; gap: 5px;
     background: var(--panel2); border: 1px solid var(--line); border-left-width: 3px;
-    border-radius: 5px; padding: 7px 9px; font-size: 13px; cursor: pointer; }
+    border-radius: 5px; padding: 7px 9px; font-size: calc(13px * var(--fscale)); cursor: pointer; }
   .mk:hover { border-color: var(--line2); }
   .mk.editing { border-color: var(--accent); background: var(--panel); }
   .mk .top, .mk .bot { display: flex; align-items: center; gap: 7px; }
-  .mk .tn { font-family: var(--mono); font-size: 10px; font-weight: 700; color: #201700;
+  .mk .tn { font-family: var(--mono); font-size: calc(10px * var(--fscale)); font-weight: 700; color: #201700;
     background: var(--accent); border-radius: 4px; padding: 1px 5px; flex: none; }
   .mk .nm { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .mk .rng { font-family: var(--mono); font-size: 10.5px; color: var(--muted);
     font-variant-numeric: tabular-nums; }
-  .mk .type { font-family: var(--mono); font-size: 9px; letter-spacing: .08em;
+  .mk .type { font-family: var(--mono); font-size: calc(9px * var(--fscale)); letter-spacing: .08em;
     text-transform: uppercase; color: var(--dim); }
-  .mk .del { margin-left: auto; padding: 2px 7px; font-size: 15px; line-height: 1;
+  .mk .del { margin-left: auto; padding: 2px 7px; font-size: calc(15px * var(--fscale)); line-height: 1;
     background: none; border: none; color: var(--dim); flex: none; }
   .mk .del:hover { color: var(--right); }
-  .mk .meta { font-family: var(--mono); font-size: 9px; letter-spacing: .05em;
+  .mk .meta { font-family: var(--mono); font-size: calc(9px * var(--fscale)); letter-spacing: .05em;
     text-transform: uppercase; color: var(--muted); background: var(--panel);
     border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; }
   .mk .meta.ot { color: var(--race); border-color: var(--race); }
@@ -145,7 +166,7 @@
     display: flex; align-items: center; }
   summary.grp-title::-webkit-details-marker { display: none; }
   summary.grp-title::after { content: "▾"; margin-left: auto; color: var(--dim);
-    font-size: 11px; transition: transform .15s; }
+    font-size: calc(11px * var(--fscale)); transition: transform .15s; }
   details:not([open]) > summary.grp-title::after { transform: rotate(-90deg); }
   details[open] > summary.grp-title { margin-bottom: 10px; }
 
@@ -178,8 +199,8 @@
 
     /* Finger-friendly targets, and let control rows wrap instead of running
        off the right edge (the ± nudge and the severity/overtake selects). */
-    .mapctl button { width: 42px; height: 42px; font-size: 22px; }
-    .dist-row .nudge button { width: 46px; height: 40px; font-size: 20px; }
+    .mapctl button { width: 42px; height: 42px; font-size: calc(22px * var(--fscale)); }
+    .dist-row .nudge button { width: 46px; height: 40px; font-size: calc(20px * var(--fscale)); }
     aside button, aside select, aside input[type=text] { min-height: 42px; }
     input[type=range] { height: 28px; }
     .row, .dist-row { flex-wrap: wrap; }
@@ -187,7 +208,7 @@
     /* Put the ±1 m nudge on its own full-width line so it can't be pushed off
        the right edge, with bigger tap targets. */
     .dist-row .nudge { margin-left: 0; margin-top: 8px; flex-basis: 100%; }
-    .dist-row .nudge button { width: 68px; height: 42px; font-size: 22px; }
+    .dist-row .nudge button { width: 68px; height: 42px; font-size: calc(22px * var(--fscale)); }
 
     /* Text fields: on focus, shift the whole editor UP so the field clears the
        on-screen keyboard — the map stays visible, it just slides up. The shift
@@ -968,6 +989,17 @@ window.SHFONIC = {
   isDirty:   ()  => _dirty,
   markSaved: ()  => { _dirty = false; },   // host wrote the file — no longer dirty
   embed:     ()  => document.body.classList.add("embedded"),  // hide open/save controls
+  // Apply the app's appearance + font-size settings. mode is "light"/"dark";
+  // scale is the font multiplier (1 = default). Colours come from the CSS
+  // variables, so re-render so the SVG map re-reads them via cssv().
+  setTheme:  (mode, scale) => {
+    const root = document.documentElement;
+    if (mode === "light") root.setAttribute("data-theme", "light");
+    else root.removeAttribute("data-theme");
+    const s = Number(scale);
+    root.style.setProperty("--fscale", (isFinite(s) && s > 0) ? s : 1);
+    if (typeof TRACK !== "undefined" && TRACK) render();
+  },
 };
 $("copy").addEventListener("click", async () => {
   const json = JSON.stringify(exportObj(), null, 2);
