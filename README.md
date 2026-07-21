@@ -97,6 +97,13 @@ Record a track in Shfonic Dash, then open a PR adding the `.json`. CI runs `vali
 on every file, so anything malformed is caught automatically. Full workflow in
 **[CONTRIBUTING.md](CONTRIBUTING.md)**.
 
+## Support
+
+This track database is free and open. If it's useful to you or your project, you can
+support the work:
+
+<a href="https://buymeacoffee.com/shfonic"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" height="46"></a>
+
 ## License
 
 Released under **[CC BY 4.0](LICENSE)** — free to use, share and adapt, including in
