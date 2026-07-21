@@ -26,6 +26,7 @@ Which tracks exist and what's filled in. `—` = not done yet — **contribution
 | f1_25 | Shanghai | f2, formula1, formula1_2026 | ✅ | 18 | f2: —<br>formula1: —<br>formula1_2026: — |  |
 | f1_25 | Silverstone | f2, formula1, formula1_2026 | ✅ | 23 | f2: —<br>formula1: —<br>formula1_2026: — |  |
 | f1_25 | Spa | f2, formula1, formula1_2026 | ✅ | 22 | f2: —<br>formula1: —<br>formula1_2026: — |  |
+| f1_25 | Suzuka | f2, formula1, formula1_2026 | ✅ | 20 | f2: —<br>formula1: —<br>formula1_2026: — |  |
 <!-- COVERAGE:END -->
 
 Circuit geometry (edges, pit, sectors, corner labels) is **shared across car classes**;
