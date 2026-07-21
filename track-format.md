@@ -20,6 +20,7 @@ it lives in a `lines` map keyed by car class.
 | `track` | str | track name, e.g. `Silverstone` |
 | `game_track_length_m` | float | lap length reported by the game (sanity check) |
 | `notes` | str | free-text notes for the whole track (e.g. "missing F2 line") |
+| `orientation` | float | **cosmetic** display rotation in degrees (0 = north-up); rotates every top-down map view, coordinates untouched. Set in the editor's *Map orientation* control *(optional, default 0)* |
 | `created` | str | ISO-8601 UTC, stamped once at first save; kept across edits *(optional)* |
 | `updated` | str | ISO-8601 UTC, refreshed on every save *(optional)* |
 | `author` | str | who recorded it; carried through the editor unchanged (not editable there) *(optional)* |

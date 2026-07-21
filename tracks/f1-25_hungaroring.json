@@ -4,8 +4,9 @@
   "track": "Hungaroring",
   "game_track_length_m": 4377.8,
   "notes": "",
+  "orientation": 230,
   "created": "2026-07-11T10:07:11Z",
-  "updated": "2026-07-12T13:20:11Z",
+  "updated": "2026-07-21T03:33:34Z",
   "author": "Richard Hawes",
   "left_edge": [
     [

@@ -4,8 +4,9 @@
   "track": "Abu Dhabi",
   "game_track_length_m": 5280.3,
   "notes": "",
+  "orientation": 206,
   "created": "2026-07-11T00:21:49Z",
-  "updated": "2026-07-12T13:20:11Z",
+  "updated": "2026-07-21T03:40:27Z",
   "author": "Richard Hawes",
   "left_edge": [
     [
@@ -3304,126 +3305,6 @@
         472.3
       ],
       "lap_dist_m": 3540.6
-    }
-  ],
-  "sections": [
-    {
-      "turn": "1",
-      "type": "corner",
-      "start_m": 344,
-      "end_m": 476,
-      "apex_m": 410
-    },
-    {
-      "turn": "2",
-      "type": "corner",
-      "start_m": 569,
-      "end_m": 728,
-      "apex_m": 652
-    },
-    {
-      "turn": "3",
-      "type": "corner",
-      "start_m": 728,
-      "end_m": 993,
-      "apex_m": 834
-    },
-    {
-      "turn": "4",
-      "type": "corner",
-      "start_m": 966,
-      "end_m": 1112,
-      "apex_m": 1021
-    },
-    {
-      "turn": "5",
-      "type": "corner",
-      "start_m": 1363,
-      "end_m": 1562,
-      "apex_m": 1465
-    },
-    {
-      "turn": "6",
-      "type": "corner",
-      "start_m": 2607,
-      "end_m": 2700,
-      "apex_m": 2669
-    },
-    {
-      "turn": "7",
-      "type": "corner",
-      "start_m": 2700,
-      "end_m": 2779,
-      "apex_m": 2726
-    },
-    {
-      "turn": "8",
-      "type": "corner",
-      "start_m": 2779,
-      "end_m": 3017,
-      "apex_m": 2872
-    },
-    {
-      "turn": "9",
-      "type": "corner",
-      "start_m": 3586,
-      "end_m": 3930,
-      "apex_m": 3692
-    },
-    {
-      "turn": "10",
-      "type": "corner",
-      "start_m": 4010,
-      "end_m": 4169,
-      "apex_m": 4102
-    },
-    {
-      "turn": "11",
-      "type": "corner",
-      "start_m": 4169,
-      "end_m": 4314,
-      "apex_m": 4248
-    },
-    {
-      "turn": "12",
-      "type": "corner",
-      "start_m": 4314,
-      "end_m": 4433,
-      "apex_m": 4380
-    },
-    {
-      "turn": "13",
-      "type": "corner",
-      "start_m": 4434,
-      "end_m": 4549,
-      "apex_m": 4487
-    },
-    {
-      "turn": "14",
-      "type": "corner",
-      "start_m": 4555,
-      "end_m": 4673,
-      "apex_m": 4610
-    },
-    {
-      "turn": "15",
-      "type": "corner",
-      "start_m": 4808,
-      "end_m": 4991,
-      "apex_m": 4896
-    },
-    {
-      "turn": "16",
-      "type": "corner",
-      "start_m": 5019,
-      "end_m": 5193,
-      "apex_m": 5123
-    },
-    {
-      "name": "Pit Straight",
-      "type": "straight",
-      "start_m": 5174,
-      "end_m": 355
     }
   ],
   "lines": {
@@ -8248,5 +8129,125 @@
       "gears": null,
       "notes": ""
     }
-  }
+  },
+  "sections": [
+    {
+      "turn": "1",
+      "type": "corner",
+      "start_m": 344,
+      "end_m": 476,
+      "apex_m": 410
+    },
+    {
+      "turn": "2",
+      "type": "corner",
+      "start_m": 569,
+      "end_m": 728,
+      "apex_m": 652
+    },
+    {
+      "turn": "3",
+      "type": "corner",
+      "start_m": 728,
+      "end_m": 993,
+      "apex_m": 834
+    },
+    {
+      "turn": "4",
+      "type": "corner",
+      "start_m": 966,
+      "end_m": 1112,
+      "apex_m": 1021
+    },
+    {
+      "turn": "5",
+      "type": "corner",
+      "start_m": 1363,
+      "end_m": 1562,
+      "apex_m": 1465
+    },
+    {
+      "turn": "6",
+      "type": "corner",
+      "start_m": 2607,
+      "end_m": 2700,
+      "apex_m": 2669
+    },
+    {
+      "turn": "7",
+      "type": "corner",
+      "start_m": 2700,
+      "end_m": 2779,
+      "apex_m": 2726
+    },
+    {
+      "turn": "8",
+      "type": "corner",
+      "start_m": 2779,
+      "end_m": 3017,
+      "apex_m": 2872
+    },
+    {
+      "turn": "9",
+      "type": "corner",
+      "start_m": 3586,
+      "end_m": 3930,
+      "apex_m": 3692
+    },
+    {
+      "turn": "10",
+      "type": "corner",
+      "start_m": 4010,
+      "end_m": 4169,
+      "apex_m": 4102
+    },
+    {
+      "turn": "11",
+      "type": "corner",
+      "start_m": 4169,
+      "end_m": 4314,
+      "apex_m": 4248
+    },
+    {
+      "turn": "12",
+      "type": "corner",
+      "start_m": 4314,
+      "end_m": 4433,
+      "apex_m": 4380
+    },
+    {
+      "turn": "13",
+      "type": "corner",
+      "start_m": 4434,
+      "end_m": 4549,
+      "apex_m": 4487
+    },
+    {
+      "turn": "14",
+      "type": "corner",
+      "start_m": 4555,
+      "end_m": 4673,
+      "apex_m": 4610
+    },
+    {
+      "turn": "15",
+      "type": "corner",
+      "start_m": 4808,
+      "end_m": 4991,
+      "apex_m": 4896
+    },
+    {
+      "turn": "16",
+      "type": "corner",
+      "start_m": 5019,
+      "end_m": 5193,
+      "apex_m": 5123
+    },
+    {
+      "name": "Pit Straight",
+      "type": "straight",
+      "start_m": 5174,
+      "end_m": 355
+    }
+  ]
 }

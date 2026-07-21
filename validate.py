@@ -128,6 +128,11 @@ def validate_file(path):
     if "notes" in obj and not isinstance(obj["notes"], str):
         errs.append("notes: must be a string")
 
+    if "orientation" in obj:
+        o = obj["orientation"]
+        if not isinstance(o, (int, float)) or isinstance(o, bool):
+            errs.append("orientation: must be a number (degrees)")
+
     # Optional provenance metadata (absent on pre-metadata maps).
     for k in ("created", "updated", "author"):
         if k in obj and not isinstance(obj[k], str):

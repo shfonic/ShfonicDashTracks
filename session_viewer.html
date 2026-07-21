@@ -230,6 +230,18 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const sx = x => -x;
 const sy = z => -z;
 
+// Cosmetic display rotation (degrees), from the track's `orientation` field —
+// set once when the track loads. Realised as an SVG rotate() on the scene group
+// (see applyTransform), so the tap/hit-test maths, which works in the scene
+// group's own child space, is untouched; only computeVB rotates the projected
+// points to re-frame the bounds. Identical to the map editor.
+let ORI = 0;
+function rotXY(X, Y) {
+  if (!ORI) return [X, Y];
+  const r = ORI * Math.PI / 180, c = Math.cos(r), s = Math.sin(r);
+  return [X * c - Y * s, X * s + Y * c];
+}
+
 // ---- state ----
 let DATA = null;          // {track, car_class, session, laps, best_num}
 let TRACK = null;         // the track map, with .racing_line set to the class line
@@ -266,7 +278,9 @@ function allPoints(t) {
 function computeVB(t) {
   const pts = allPoints(t);
   if (!pts.length) { VB = { w: 1, h: 1 }; return; }
-  const X = pts.map(p => sx(p[0])), Y = pts.map(p => sy(p[1]));
+  // Frame the *rotated* projection (the scene group applies the same rotate).
+  const P = pts.map(p => rotXY(sx(p[0]), sy(p[1])));
+  const X = P.map(q => q[0]), Y = P.map(q => q[1]);
   const minx = Math.min(...X), maxx = Math.max(...X);
   const miny = Math.min(...Y), maxy = Math.max(...Y);
   const pad = 40;
@@ -373,7 +387,8 @@ function add(tag, attrs) {
   (sceneG || svg).appendChild(el); return el;
 }
 function applyTransform() {
-  if (sceneG) sceneG.setAttribute("transform", `translate(${pz.tx} ${pz.ty}) scale(${pz.k})`);
+  if (sceneG) sceneG.setAttribute("transform",
+    `translate(${pz.tx} ${pz.ty}) scale(${pz.k}) rotate(${ORI})`);
 }
 function clientToScene(cx, cy) {
   const pt = svg.createSVGPoint(); pt.x = cx; pt.y = cy;
@@ -400,9 +415,14 @@ function resetView() { selectedEvent = null; pz = { k: 1, tx: 0, ty: 0 }; render
 function dot(p, r, fill, stroke, sw) {
   add("circle", { cx: sx(p[0]), cy: sy(p[1]), r, fill, stroke, "stroke-width": sw }); }
 function label(p, s, col, size, dx) {
-  const t = add("text", { x: sx(p[0])+dx, y: sy(p[1])-dx*0.4, fill: col,
+  const x = sx(p[0])+dx, y = sy(p[1])-dx*0.4;
+  const attrs = { x, y, fill: col,
     "font-size": size, "font-family": "var(--mono)", "paint-order": "stroke",
-    stroke: "var(--bg)", "stroke-width": size*0.18 }); t.textContent = s; }
+    stroke: "var(--bg)", "stroke-width": size*0.18 };
+  // Counter-rotate each label by -ORI about its own anchor so it rides to the
+  // rotated position (the scene group is rotated by ORI) but stays upright.
+  if (ORI) attrs.transform = `rotate(${-ORI} ${x} ${y})`;
+  const t = add("text", attrs); t.textContent = s; }
 // Incident marker at screen point (x,y): red ✕ for a track-limits invalidation,
 // blue ▲ for a flashback, orange ◆ for contact. A faint page-coloured halo keeps
 // it legible; a tapped marker gets an accent ring. Sized in screen units (caller
@@ -430,7 +450,13 @@ function eventMarker(x, y, kind, s, selected) {
 // undid it), so overlapping markers are all visible. r is the marker radius, so
 // the fan spacing is constant on screen at any zoom.
 function markerScenePos(ev, r) {
-  const p = posAtDistance(TRACK.racing_line, ev.distance, total());
+  // Place the marker on the driven line of the lap it happened on — where the
+  // car actually was — not the ideal racing line. Falls back to the racing line
+  // when that lap has no profile (races / practice, or an unprofiled lap).
+  const lap = ev.lap_num != null
+    ? LAPS.find(l => l.num === ev.lap_num && l.driven && l.driven.length) : null;
+  const line = lap ? lap.driven : TRACK.racing_line;
+  const p = posAtDistance(line, ev.distance, total());
   if (!p) return null;
   let x = sx(p[0]), y = sy(p[1]);
   if (ev._fanN > 1 && ev._perp) {
@@ -675,6 +701,7 @@ function loadData(data) {
   if (!data || !data.track) { updateHud("No track in that data."); return; }
   DATA = data;
   TRACK = data.track;
+  ORI = Number(TRACK.orientation) || 0;      // cosmetic display rotation, baked into the map
   ["left_edge","right_edge","sectors"].forEach(k => TRACK[k] = TRACK[k] || []);
   TRACK.racing_line = resolveRacingLine(TRACK, data.car_class);
   NORMALS = TRACK.racing_line.length ? rightNormals(TRACK.racing_line) : [];

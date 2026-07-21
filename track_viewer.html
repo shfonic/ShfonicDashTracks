@@ -285,6 +285,22 @@
         <label class="lab" for="clsNotes">Notes for this class</label>
         <textarea id="clsNotes" rows="2" placeholder="e.g. 2026 line still rough in S2"></textarea>
       </div>
+      <div class="field">
+        <label class="lab" for="oriRange">Map orientation · rotate the whole view</label>
+        <div class="dist-row">
+          <input type="range" id="oriRange" min="0" max="359" step="1" value="0" style="flex:1" />
+          <input type="number" id="oriNum" min="0" max="359" step="1" value="0"
+                 style="width:60px" aria-label="Orientation in degrees" />
+          <span class="u">°</span>
+        </div>
+        <div class="row" style="margin-top:6px">
+          <button id="oriL90" title="Rotate 90° anticlockwise">&#8630; 90&deg;</button>
+          <button id="oriR90" title="Rotate 90° clockwise">90&deg; &#8631;</button>
+          <button id="oriReset" title="Reset to north-up">Reset</button>
+        </div>
+        <p class="lab" style="margin-top:4px;opacity:.7">Cosmetic only — turns every
+           map view of this track. Coordinates are unchanged.</p>
+      </div>
     </section>
 
     <div class="divider" id="notesdiv" hidden></div>
@@ -393,6 +409,19 @@ const $ = id => document.getElementById(id);
 const sx = x => -x;
 const sy = z => -z;
 
+// Cosmetic display rotation (degrees), from the track's `orientation` field: a
+// turn applied to the whole top-down view so a circuit can be framed more
+// legibly without touching the recorded world coordinates. It is realised as an
+// SVG rotate() on the scene group (see applyTransform), so the tap/hit-test
+// maths — which works in the scene group's own child space — stays untouched;
+// only computeVB has to rotate the projected points to re-frame the bounds.
+let ORI = 0;
+function rotXY(X, Y) {                 // rotate a projected point by ORI about origin
+  if (!ORI) return [X, Y];             //   (matches SVG rotate(ORI) exactly)
+  const r = ORI * Math.PI / 180, c = Math.cos(r), s = Math.sin(r);
+  return [X * c - Y * s, X * s + Y * c];
+}
+
 const LAYERS = [
   { key: "surface", label: "Track surface", css: "--surface" },
   { key: "left",    label: "Left edge",     css: "--left" },
@@ -414,7 +443,10 @@ function allPoints(t) {
 }
 function computeVB(t) {
   const pts = allPoints(t);
-  const X = pts.map(p => sx(p[0])), Y = pts.map(p => sy(p[1]));
+  // Frame the *rotated* projection (the scene group applies the same rotate),
+  // so the view stays fitted and centred at any orientation.
+  const P = pts.map(p => rotXY(sx(p[0]), sy(p[1])));
+  const X = P.map(q => q[0]), Y = P.map(q => q[1]);
   const minx = Math.min(...X), maxx = Math.max(...X);
   const miny = Math.min(...Y), maxy = Math.max(...Y);
   const pad = 40;
@@ -492,7 +524,11 @@ function add(tag, attrs) {
   (sceneG || svg).appendChild(el); return el;
 }
 function applyTransform() {
-  if (sceneG) sceneG.setAttribute("transform", `translate(${pz.tx} ${pz.ty}) scale(${pz.k})`);
+  // rotate(ORI) is innermost (applied first, in world/child space); pan+zoom
+  // wrap it. getScreenCTM() therefore carries the rotation, so every hit-test
+  // that back-projects through it needs no change.
+  if (sceneG) sceneG.setAttribute("transform",
+    `translate(${pz.tx} ${pz.ty}) scale(${pz.k}) rotate(${ORI})`);
 }
 function clientToScene(cx, cy) {
   const pt = svg.createSVGPoint(); pt.x = cx; pt.y = cy;
@@ -514,9 +550,17 @@ function resetView() { pz = { k: 1, tx: 0, ty: 0 }; render(); }
 function dot(p, r, fill, stroke, sw) {
   add("circle", { cx: sx(p[0]), cy: sy(p[1]), r, fill, stroke, "stroke-width": sw }); }
 function label(p, s, col, size, dx) {
-  const t = add("text", { x: sx(p[0])+dx, y: sy(p[1])-dx*0.4, fill: col,
+  const x = sx(p[0])+dx, y = sy(p[1])-dx*0.4;
+  const attrs = { x, y, fill: col,
     "font-size": size, "font-family": "var(--mono)", "paint-order": "stroke",
-    stroke: "var(--bg)", "stroke-width": size*0.18 }); t.textContent = s; }
+    stroke: "var(--bg)", "stroke-width": size*0.18 };
+  // The scene group is rotated by ORI (see applyTransform), which would turn the
+  // text with it — corner/straight names go sideways or upside-down. Counter-
+  // rotate each label by -ORI about its own anchor so it rides to the rotated
+  // position but stays upright and readable. (Direction markers are meant to
+  // rotate, so only text is cancelled.)
+  if (ORI) attrs.transform = `rotate(${-ORI} ${x} ${y})`;
+  const t = add("text", attrs); t.textContent = s; }
 
 function render() {
   if (!TRACK) return;
@@ -856,6 +900,7 @@ function loadTrack(t) {
   ensureLines(t);
   ["left_edge","right_edge","pit_lane","sectors"].forEach(k => t[k] = t[k]||[]);
   TRACK = t;
+  ORI = Number(t.orientation) || 0;
   activeClass = Object.keys(t.lines)[0] || null;
   applyActiveLine();
   // Sections now live inside the track JSON. Load any that are already there.
@@ -869,6 +914,7 @@ function loadTrack(t) {
   $("notessec").hidden = false; $("notesdiv").hidden = false;
   $("notes").value = t.notes || "";
   $("clsNotes").value = (activeClass && t.lines[activeClass] && t.lines[activeClass].notes) || "";
+  $("oriRange").value = ORI; $("oriNum").value = ORI;
   computeVB(t); chips(); buildLayers(); setEnabled(true);
   resetForm();                 // clears the form + selection and renders
   updateDist(); $("hud").textContent = hudBase();
@@ -883,6 +929,24 @@ $("classSel").addEventListener("change", e => {
   chips(); buildLayers(); render(); updateDist();
 });
 $("notes").addEventListener("input", e => { if (TRACK) { TRACK.notes = e.target.value; markDirty(); } });
+
+// Map orientation — a cosmetic rotation of the whole view (see ORI). Updating it
+// re-frames the bounds (computeVB) and re-fits (resetView), and writes the value
+// onto the track so it exports and every other view (Pi + web + companion) picks
+// it up. Kept in [0,360).
+function setOrientation(deg, { fromInput } = {}) {
+  if (!TRACK) return;
+  ORI = ((Math.round(Number(deg) || 0) % 360) + 360) % 360;
+  TRACK.orientation = ORI;
+  if (fromInput !== "range") $("oriRange").value = ORI;
+  if (fromInput !== "num")   $("oriNum").value = ORI;
+  computeVB(TRACK); resetView(); markDirty();
+}
+$("oriRange").addEventListener("input", e => setOrientation(e.target.value, { fromInput: "range" }));
+$("oriNum").addEventListener("input",   e => setOrientation(e.target.value, { fromInput: "num" }));
+onTap($("oriL90"),  () => setOrientation(ORI - 90));
+onTap($("oriR90"),  () => setOrientation(ORI + 90));
+onTap($("oriReset"), () => setOrientation(0));
 $("clsNotes").addEventListener("input", e => {
   if (TRACK && activeClass && TRACK.lines[activeClass]) {
     TRACK.lines[activeClass].notes = e.target.value; markDirty();
@@ -983,6 +1047,7 @@ function exportObj() {
     track: t.track || "",
     game_track_length_m: t.game_track_length_m || 0,
     notes: t.notes || "",
+    orientation: Math.round((Number(ORI) || 0) * 100) / 100,
     created: t.created || "",
     updated: nowIso,
     author: t.author || "",

@@ -4,8 +4,9 @@
   "track": "Madrid",
   "game_track_length_m": 5411.2,
   "notes": "",
+  "orientation": 272,
   "created": "2026-07-11T11:17:33Z",
-  "updated": "2026-07-12T13:20:11Z",
+  "updated": "2026-07-21T03:35:29Z",
   "author": "Richard Hawes",
   "left_edge": [
     [
@@ -8140,7 +8141,7 @@
       "end_m": 1641
     },
     {
-      "name": "Subida de las C\u00e1rcavas",
+      "name": "Subida de las Cárcavas",
       "type": "complex",
       "start_m": 1573,
       "end_m": 1722,
@@ -8157,7 +8158,7 @@
     },
     {
       "turn": "8",
-      "name": "El B\u00fanker",
+      "name": "El Búnker",
       "type": "corner",
       "start_m": 1872,
       "end_m": 1953,

@@ -4,8 +4,9 @@
   "track": "Red Bull Ring",
   "game_track_length_m": 4323.4,
   "notes": "",
+  "orientation": 160,
   "created": "2026-07-12T10:05:36Z",
-  "updated": "2026-07-12T21:26:53Z",
+  "updated": "2026-07-21T03:37:06Z",
   "author": "Richard Hawes",
   "left_edge": [
     [

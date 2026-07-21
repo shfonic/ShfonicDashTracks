@@ -4,8 +4,9 @@
   "track": "Spa",
   "game_track_length_m": 7006.1,
   "notes": "",
+  "orientation": 89,
   "created": "2026-07-10T05:48:40Z",
-  "updated": "2026-07-12T13:20:11Z",
+  "updated": "2026-07-21T03:26:16Z",
   "author": "Richard Hawes",
   "left_edge": [
     [
@@ -3304,169 +3305,6 @@
         897.59
       ],
       "lap_dist_m": 5065.2
-    }
-  ],
-  "sections": [
-    {
-      "turn": "1",
-      "name": "La Source",
-      "type": "corner",
-      "start_m": 334,
-      "end_m": 474,
-      "apex_m": 393
-    },
-    {
-      "turn": "2",
-      "type": "corner",
-      "start_m": 966,
-      "end_m": 1111,
-      "apex_m": 1066
-    },
-    {
-      "turn": "3",
-      "name": "Eau Rouge",
-      "type": "corner",
-      "start_m": 1106,
-      "end_m": 1247,
-      "apex_m": 1167
-    },
-    {
-      "turn": "4",
-      "name": "Raidillon",
-      "type": "corner",
-      "start_m": 1247,
-      "end_m": 1387,
-      "apex_m": 1290
-    },
-    {
-      "name": "Kemmel",
-      "type": "straight",
-      "start_m": 1370,
-      "end_m": 2370
-    },
-    {
-      "turn": "5",
-      "name": "Les Combes",
-      "type": "corner",
-      "start_m": 2353,
-      "end_m": 2480
-    },
-    {
-      "turn": "6",
-      "type": "corner",
-      "start_m": 2476,
-      "end_m": 2599
-    },
-    {
-      "turn": "7",
-      "name": "Malmedy",
-      "type": "corner",
-      "start_m": 2612,
-      "end_m": 2739,
-      "apex_m": 2666
-    },
-    {
-      "turn": "8",
-      "name": "Rivage",
-      "type": "corner",
-      "start_m": 2950,
-      "end_m": 3178,
-      "apex_m": 3073
-    },
-    {
-      "turn": "9",
-      "type": "corner",
-      "start_m": 3248,
-      "end_m": 3389,
-      "apex_m": 3313
-    },
-    {
-      "turn": "10",
-      "name": "Pouhon",
-      "type": "corner",
-      "start_m": 3740,
-      "end_m": 3951,
-      "apex_m": 3851
-    },
-    {
-      "turn": "11",
-      "type": "corner",
-      "start_m": 3951,
-      "end_m": 4197,
-      "apex_m": 4079
-    },
-    {
-      "turn": "12",
-      "name": "Fagnes",
-      "type": "corner",
-      "start_m": 4425,
-      "end_m": 4618,
-      "apex_m": 4542
-    },
-    {
-      "turn": "13",
-      "type": "corner",
-      "start_m": 4618,
-      "end_m": 4759,
-      "apex_m": 4675
-    },
-    {
-      "turn": "14",
-      "name": "Campus",
-      "type": "corner",
-      "start_m": 4899,
-      "end_m": 5039,
-      "apex_m": 4969
-    },
-    {
-      "turn": "15",
-      "name": "Curve Paul Frere",
-      "type": "corner",
-      "start_m": 5092,
-      "end_m": 5285,
-      "apex_m": 5190
-    },
-    {
-      "turn": "16",
-      "type": "corner",
-      "start_m": 5759,
-      "end_m": 6040,
-      "apex_m": 5900
-    },
-    {
-      "turn": "17",
-      "name": "Blanchimont",
-      "type": "corner",
-      "start_m": 6111,
-      "end_m": 6304,
-      "apex_m": 6198
-    },
-    {
-      "turn": "18",
-      "name": "Bus Stop",
-      "type": "corner",
-      "start_m": 6708,
-      "end_m": 6778,
-      "apex_m": 6760
-    },
-    {
-      "name": "Bus Stop Chicane",
-      "type": "chicane",
-      "start_m": 6708,
-      "end_m": 6866
-    },
-    {
-      "turn": "19",
-      "type": "corner",
-      "start_m": 6778,
-      "end_m": 6866,
-      "apex_m": 6813
-    },
-    {
-      "name": "Pit Straight",
-      "type": "straight",
-      "start_m": 6848,
-      "end_m": 351
     }
   ],
   "lines": {
@@ -8291,5 +8129,169 @@
       "gears": null,
       "notes": ""
     }
-  }
+  },
+  "sections": [
+    {
+      "turn": "1",
+      "name": "La Source",
+      "type": "corner",
+      "start_m": 334,
+      "end_m": 474,
+      "apex_m": 393
+    },
+    {
+      "turn": "2",
+      "type": "corner",
+      "start_m": 966,
+      "end_m": 1111,
+      "apex_m": 1066
+    },
+    {
+      "turn": "3",
+      "name": "Eau Rouge",
+      "type": "corner",
+      "start_m": 1106,
+      "end_m": 1247,
+      "apex_m": 1167
+    },
+    {
+      "turn": "4",
+      "name": "Raidillon",
+      "type": "corner",
+      "start_m": 1247,
+      "end_m": 1387,
+      "apex_m": 1290
+    },
+    {
+      "name": "Kemmel",
+      "type": "straight",
+      "start_m": 1370,
+      "end_m": 2370
+    },
+    {
+      "turn": "5",
+      "name": "Les Combes",
+      "type": "corner",
+      "start_m": 2353,
+      "end_m": 2480
+    },
+    {
+      "turn": "6",
+      "type": "corner",
+      "start_m": 2476,
+      "end_m": 2599
+    },
+    {
+      "turn": "7",
+      "name": "Malmedy",
+      "type": "corner",
+      "start_m": 2612,
+      "end_m": 2739,
+      "apex_m": 2666
+    },
+    {
+      "turn": "8",
+      "name": "Rivage",
+      "type": "corner",
+      "start_m": 2950,
+      "end_m": 3178,
+      "apex_m": 3073
+    },
+    {
+      "turn": "9",
+      "name": "No Name",
+      "type": "corner",
+      "start_m": 3248,
+      "end_m": 3389,
+      "apex_m": 3313
+    },
+    {
+      "turn": "10",
+      "name": "Pouhon",
+      "type": "corner",
+      "start_m": 3740,
+      "end_m": 3951,
+      "apex_m": 3851
+    },
+    {
+      "turn": "11",
+      "type": "corner",
+      "start_m": 3951,
+      "end_m": 4197,
+      "apex_m": 4079
+    },
+    {
+      "turn": "12",
+      "name": "Fagnes",
+      "type": "corner",
+      "start_m": 4425,
+      "end_m": 4618,
+      "apex_m": 4542
+    },
+    {
+      "turn": "13",
+      "type": "corner",
+      "start_m": 4618,
+      "end_m": 4759,
+      "apex_m": 4675
+    },
+    {
+      "turn": "14",
+      "name": "Campus",
+      "type": "corner",
+      "start_m": 4899,
+      "end_m": 5039,
+      "apex_m": 4969
+    },
+    {
+      "turn": "15",
+      "name": "Curve Paul Frere",
+      "type": "corner",
+      "start_m": 5092,
+      "end_m": 5285,
+      "apex_m": 5190
+    },
+    {
+      "turn": "16",
+      "type": "corner",
+      "start_m": 5759,
+      "end_m": 6040,
+      "apex_m": 5900
+    },
+    {
+      "turn": "17",
+      "name": "Blanchimont",
+      "type": "corner",
+      "start_m": 6111,
+      "end_m": 6304,
+      "apex_m": 6198
+    },
+    {
+      "turn": "18",
+      "name": "Bus Stop",
+      "type": "corner",
+      "start_m": 6708,
+      "end_m": 6778,
+      "apex_m": 6760
+    },
+    {
+      "name": "Bus Stop Chicane",
+      "type": "chicane",
+      "start_m": 6708,
+      "end_m": 6866
+    },
+    {
+      "turn": "19",
+      "type": "corner",
+      "start_m": 6778,
+      "end_m": 6866,
+      "apex_m": 6813
+    },
+    {
+      "name": "Pit Straight",
+      "type": "straight",
+      "start_m": 6848,
+      "end_m": 351
+    }
+  ]
 }
