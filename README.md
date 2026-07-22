@@ -72,6 +72,8 @@ python3 validate.py tracks/f1-25_silverstone.json
 
 ## Map utility
 
+![Track map editor showing Melbourne with labelled corners and the racing line](trackmap-editor.jpg)
+
 **`track_viewer.html`** is a standalone, offline browser tool (no build, no server — just
 open it) for viewing a track, switching between each car class's racing line, labelling
 corners / straights / complexes, and editing notes and gears. Open a track file, edit,
