@@ -584,13 +584,14 @@ function fmtSector(sec) {
 }
 function chips() {
   const ss = (DATA && DATA.session) || {};
+  const hasLen = TRACK && TRACK.game_track_length_m;
   const rows = [
     ["Game", (ss.game || (TRACK && TRACK.game) || "").toUpperCase() || "—"],
     ["Class", ss.title || DATA.car_class || "—"],
     ["Session", (ss.session_type || "").toUpperCase() || "—"],
     ["Laps", String(LAPS.length)],
-    ["Length", fmt(total()) + " m"],
   ];
+  if (hasLen) rows.push(["Length", fmt(total()) + " m"]);
   $("chips").innerHTML = rows.map(([k,v]) => `<span class="chip">${k} <b>${esc(v)}</b></span>`).join("");
 }
 function esc(s) { return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
@@ -698,9 +699,14 @@ function resolveRacingLine(t, carClass) {
   return (e && e.racing_line) || [];
 }
 function loadData(data) {
-  if (!data || !data.track) { updateHud("No track in that data."); return; }
+  // A session draws if it has a track map OR at least one raw driven path (W
+  // rows) — the path is in world coordinates, so it renders on its own and a
+  // track map dropped on later lines up in the same space.
+  if (!data || (!data.track && !(data.laps || []).some(l => l && l.path))) {
+    updateHud("No track or driven line in that data."); return;
+  }
   DATA = data;
-  TRACK = data.track;
+  TRACK = data.track || {};
   ORI = Number(TRACK.orientation) || 0;      // cosmetic display rotation, baked into the map
   ["left_edge","right_edge","sectors"].forEach(k => TRACK[k] = TRACK[k] || []);
   TRACK.racing_line = resolveRacingLine(TRACK, data.car_class);
@@ -709,11 +715,15 @@ function loadData(data) {
   const best = data.best_num;
   LAPS = (data.laps || []).map((lap, i) => {
     const offsets = lap.offsets || [];
+    // Prefer the raw driven path (world coords, W rows): it is the true line,
+    // never distorted by a racing-line re-record. Fall back to reconstructing
+    // from the offset profile for older sessions recorded before the path.
+    const driven = (lap.path && lap.path.length) ? lap.path
+                 : ((NORMALS.length && offsets.length) ? drivenLine(offsets) : null);
     return {
       num: lap.num, time: lap.time, invalid: !!lap.invalid,
-      s1: lap.s1, s2: lap.s2, s3: lap.s3, offsets,
+      s1: lap.s1, s2: lap.s2, s3: lap.s3, offsets, driven,
       color: LAP_COLORS[i % LAP_COLORS.length],
-      driven: (NORMALS.length && offsets.length) ? drivenLine(offsets) : null,
       best: best != null && lap.num === best,
       on: best != null ? lap.num === best : i === 0,   // best only by default
     };
