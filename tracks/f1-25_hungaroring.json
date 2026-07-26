@@ -6,7 +6,7 @@
   "notes": "",
   "orientation": 230,
   "created": "2026-07-11T10:07:11Z",
-  "updated": "2026-07-21T03:33:34Z",
+  "updated": "2026-07-24T23:52:21Z",
   "author": "Richard Hawes",
   "left_edge": [
     [
@@ -8113,6 +8113,7 @@
   "sections": [
     {
       "turn": "1",
+      "name": "Piquet",
       "type": "corner",
       "start_m": 560,
       "end_m": 702,
@@ -8120,6 +8121,7 @@
     },
     {
       "turn": "2",
+      "name": "Hamilton",
       "type": "corner",
       "start_m": 1031,
       "end_m": 1229,
@@ -8127,6 +8129,7 @@
     },
     {
       "turn": "3",
+      "name": "Spring",
       "type": "corner",
       "start_m": 1273,
       "end_m": 1393,
@@ -8134,6 +8137,7 @@
     },
     {
       "turn": "4",
+      "name": "Mansell",
       "type": "corner",
       "start_m": 1745,
       "end_m": 1876,
@@ -8141,6 +8145,7 @@
     },
     {
       "turn": "5",
+      "name": "Mogyorod",
       "type": "corner",
       "start_m": 1953,
       "end_m": 2172,
@@ -8154,6 +8159,12 @@
       "apex_m": 2380
     },
     {
+      "name": "Driving Centre",
+      "type": "chicane",
+      "start_m": 2326,
+      "end_m": 2469
+    },
+    {
       "turn": "7",
       "type": "corner",
       "start_m": 2403,
@@ -8162,13 +8173,25 @@
     },
     {
       "turn": "8",
+      "name": "Buda",
       "type": "corner",
       "start_m": 2524,
       "end_m": 2644,
       "apex_m": 2593
     },
     {
+      "name": "Buda/Pest",
+      "type": "complex",
+      "start_m": 2524,
+      "end_m": 2798,
+      "members": [
+        "8",
+        "9"
+      ]
+    },
+    {
       "turn": "9",
+      "name": "Pest",
       "type": "corner",
       "start_m": 2666,
       "end_m": 2798,
@@ -8176,6 +8199,7 @@
     },
     {
       "turn": "10",
+      "name": "Danube",
       "type": "corner",
       "start_m": 2886,
       "end_m": 2984,
@@ -8183,6 +8207,7 @@
     },
     {
       "turn": "11",
+      "name": "Alesi",
       "type": "corner",
       "start_m": 3017,
       "end_m": 3204,
@@ -8190,6 +8215,7 @@
     },
     {
       "turn": "12",
+      "name": "Schumacher",
       "type": "corner",
       "start_m": 3467,
       "end_m": 3599,
@@ -8197,6 +8223,7 @@
     },
     {
       "turn": "13",
+      "name": "Senna",
       "type": "corner",
       "start_m": 3698,
       "end_m": 3895,
@@ -8204,6 +8231,7 @@
     },
     {
       "turn": "14",
+      "name": "Szisz",
       "type": "corner",
       "start_m": 3961,
       "end_m": 4224,
