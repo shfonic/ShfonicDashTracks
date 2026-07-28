@@ -14,7 +14,7 @@
     --bg: #0a0d12; --panel: #10151d; --panel2: #161c26; --line: #232b38;
     --line2: #313b4b; --text: #e7edf5; --muted: #8b95a6; --dim: #5b6576;
     --accent: #ffb300;
-    --left: #5a96f5; --right: #f5963f; --ideal: #58d980;
+    --left: #5a96f5; --right: #f5963f; --ideal: #58d980; --pit: #c678dd;
     --sf: #ffffff; --sector: #e6cf46; --surface: rgba(120,140,170,0.10);
     --best: #ff5db1; --flashback: #59a9ff; --danger: #ff5b5b; --contact: #f5963f;
     --hud-bg: rgba(10,13,18,0.72);
@@ -26,7 +26,7 @@
     --bg: #f4f6f9; --panel: #ffffff; --panel2: #eceff4; --line: #d6dbe2;
     --line2: #c2cad4; --text: #171c23; --muted: #566171; --dim: #8a92a0;
     --accent: #b07800;
-    --left: #2e6fd4; --right: #cf6a17; --ideal: #2f9e57;
+    --left: #2e6fd4; --right: #cf6a17; --ideal: #2f9e57; --pit: #9a4fb5;
     --sf: #3a4048; --sector: #9a8500; --surface: rgba(40,70,110,0.08);
     --best: #c0267e; --flashback: #1f6fd0; --danger: #d63a3a; --contact: #cf6a17;
     --hud-bg: rgba(255,255,255,0.9);
@@ -262,6 +262,7 @@ const LAP_COLORS = ["#ffb300","#59d3e6","#a78bfa","#ff5db1","#f5963f",
 const LAYERS = [
   { key: "ideal",   label: "Racing line", css: "--ideal", on: true },
   { key: "edges",   label: "Track edges", css: "--left",  on: true },
+  { key: "pit",     label: "Pit lane",   css: "--pit",  on: true },
   { key: "sections",label: "Corner labels", css: "--accent", on: true },
   { key: "sectors", label: "Sector markers", css: "--sector", on: false },
   { key: "events",  label: "Incidents", css: "--danger", on: true },
@@ -273,6 +274,7 @@ const vis = Object.fromEntries(LAYERS.map(l => [l.key, l.on]));
 function total() { return (TRACK && TRACK.game_track_length_m) || 1; }
 function allPoints(t) {
   return [...(t.left_edge||[]), ...(t.right_edge||[]), ...(t.racing_line||[]),
+          ...(t.pit_lane||[]),
           ...LAPS.filter(l => l.driven).flatMap(l => l.driven)];
 }
 function computeVB(t) {
@@ -513,6 +515,13 @@ function render() {
     add("path", { d: smoothPath(t.right_edge, true), fill:"none", stroke: cssv("--right"),
       "stroke-width": 1.5*s, "stroke-opacity": .5 });
   }
+
+  // Pit lane — an open (non-closed) dashed path, matching the track editor, so
+  // the recorded entry/lane/exit shows against the driven line.
+  if (vis.pit && t.pit_lane && t.pit_lane.length)
+    add("path", { d: smoothPath(t.pit_lane, false), fill:"none", stroke: cssv("--pit"),
+      "stroke-width": 2.5*s, "stroke-opacity": .85, "stroke-linejoin": "round",
+      "stroke-linecap": "round", "stroke-dasharray": `${6*s} ${4*s}` });
 
   if (vis.ideal && t.racing_line.length)
     add("path", { d: smoothPath(t.racing_line, true), fill:"none", stroke: cssv("--ideal"),
