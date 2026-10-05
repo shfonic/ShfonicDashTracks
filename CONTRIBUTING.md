@@ -9,7 +9,7 @@ Thanks for helping fill the map! Two kinds of contribution are equally welcome:
 ## Recording a new track
 
 You'll need [Shfonic Dash](https://shfonic.com/dash/index.html) and a game that
-broadcasts world position (F1 25 / F1 26 today).
+broadcasts world position (any F1 title from F1 2017 on).
 
 1. In the game menu, arm **RECORD**, pick the track's game, and enter record mode.
 2. Drive the guided passes: **left edge → right edge → racing line** (a few laps, it

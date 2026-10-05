@@ -17,6 +17,7 @@ Which tracks exist and what's filled in. `—` = not done yet — **contribution
 <!-- COVERAGE:START -->
 | Game | Track | Class lines | Pit | Sections | Gears | Notes |
 |---|---|---|:--:|:--:|:--:|---|
+| f1_17 | Sepang | formula1_2017 | ✅ | 16 | formula1_2017: — |  |
 | f1_25 | Abu Dhabi | f2, formula1, formula1_2026 | ✅ | 17 | f2: —<br>formula1: —<br>formula1_2026: — |  |
 | f1_25 | Baku | f2, formula1, formula1_2026 | ✅ | 25 | f2: —<br>formula1: —<br>formula1_2026: — |  |
 | f1_25 | Hungaroring | f2, formula1, formula1_2026 | ✅ | 17 | f2: —<br>formula1: —<br>formula1_2026: — |  |
@@ -38,12 +39,13 @@ the racing line **and its gears** are held per class in a `lines` map. In the **
 the lines are near-identical** — F1 and F2 differ by under a metre (recording noise) — but
 the **gears differ** (the 2026 cars super-clip to a lower gear at some corners to recharge
 the battery), so each class (`formula1`, `formula1_2026`, `f2`) is its **own profile**:
-the line copied across, the gears filled in per class. Games with genuine class variety
-(e.g. GT3 vs a road car) get a genuinely distinct line per class too. A track just needs
-*one* class profile to be useful — the rest can follow.
+the line copied across, the gears filled in per class. Class keys are **per game** — those
+three are F1 25's; F1 2017 records its cars as `formula1_2017`. Games with genuine class
+variety (e.g. GT3 vs a road car) get a genuinely distinct line per class too. A track just
+needs *one* class profile to be useful — the rest can follow.
 
-> **Position feed:** recording needs world-position telemetry, which today only
-> **F1 25 / F1 26** broadcast, so tracks are F1 for now. Other games slot in as their
+> **Position feed:** recording needs world-position telemetry, which **every F1 title from
+> F1 2017 on** broadcasts over UDP, so tracks are F1 for now. Other games slot in as their
 > position support lands.
 
 ## Accuracy & provenance
